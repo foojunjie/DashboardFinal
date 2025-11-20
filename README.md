@@ -7,3 +7,9 @@ To start running the dashboard, the installation of the following steps are need
 * Download the code.zip
 * Follow the Installation.txt
 
+# Step to run
+To run the dashboard, follow the steps below:
+* Run the mainServer.py
+* Open the integrated terminal of dashboard-app and type npm run serve
+* Click the link and the dashboard will open in browser
+
