@@ -1,0 +1,16 @@
+To run the dashboard, follow these steps:
+1. Install npm in terminal
+Code : nvm install npm
+
+2. Install node_modules 
+Code : npm install
+
+3. Create virtual environment for python (version : 3.12.10)
+Code : python -m venv .venv
+
+4. Activate Environment
+Code : .\.venv\Scripts\activate
+
+5. Install libraries
+Code : pip install -r requirements.txt
+
