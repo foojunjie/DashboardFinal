@@ -4,12 +4,12 @@
     <div class="dashboard-title">
       <h1>OUTPUT STATUS (SUMMARY WEEKLY AND MONTHLY OUTPUT UPDATE)</h1>
       <div class="title-controls">
-        <select class="title-dropdown" v-model="selectedPart" @change="sendSelectedPart">
+        <select class="title-dropdown" v-model="selectedPart" @change="onPartChange">
           <option v-for="p in productList" :key="p.customer_part_num" :value="p.customer_part_num">
             {{ p.customer_part_num }}
           </option>
         </select>
-        <input type="date" class="date-picker" v-model="selectedDate" @change="sendSelectedPart" />
+        <input type="date" class="date-picker" v-model="selectedDate" @change="onDateChange" />
       </div>
     </div>
     
@@ -92,7 +92,7 @@ export default {
       productionMeter: null,
       lineBarChart: null,
       refreshInterval: null,
-      activeMode: 'monthlyFake'  // default mode
+      activeMode: 'monthlyFake',  // default mode
     }
   },
   mounted() {
@@ -138,22 +138,40 @@ export default {
       this.lineBarChart?.resize()
     },
 
+    async onDateChange() {
+      // Load parts available for the selected date
+      await this.loadPartDropdown()
+      // Optionally, auto-select first part if none selected
+      if (this.productList.length > 0) {
+        this.selectedPart = this.productList[0].customer_part_num
+        await this.loadSummaryCO(this.selectedPart)
+      } else {
+        this.selectedPart = null
+      }
+    },
+
+    async onPartChange() {
+      if (!this.selectedPart) return
+      await this.loadSummaryCO(this.selectedPart)
+    },
+
     async loadPartDropdown() {
       this.$emit('api-loading', true)
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/summaryCO");
+        const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : ''
+        const res = await fetch(`http://127.0.0.1:8000/api/summaryCO${queryDate}`)
         if (!res.ok) throw new Error(`API error: ${res.status}`)
-        const data = await res.json();
-        this.productList = data.productList;
-        this.$emit('api-connected', true)
+        const data = await res.json()
+        this.productList = data.productList || []
       } catch (error) {
-        console.error('Error loading part dropdown:', error)
-        this.$emit('api-error', `Failed to load parts: ${error.message}`)
-        this.$emit('api-connected', false)
+        console.error('Error loading parts:', error)
+        this.productList = []
       } finally {
         this.$emit('api-loading', false)
       }
     },
+
+
 
     async sendSelectedPart() {
       // Reuse loadSummaryCO to maintain consistent parsing and chart updates
@@ -596,24 +614,41 @@ export default {
           {
             name: 'Act Out',
             type: 'bar',
+            barWidth: '30%',
             data: actOutTotals,
-            itemStyle: { color: '#3498db' }
+            label: {
+              show: true,
+              position: 'insideBottom',
+              distance: 15,
+              fontSize: 12,
+              formatter: function (params) {
+                return params.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+              },
+              color: '#fff'
+            },
+            itemStyle: {
+              color: '#3498db'
+            }
           },
           {
             name: 'Target Out',
             type: 'line',
             data: tarOut,
-            yAxisIndex: 0,
-            itemStyle: { color: '#FFEB3B' },
             symbolSize: 8,
-            lineStyle: { width: 3, color: '#FFEB3B' },
             label: {
               show: true,
               position: 'right',
               color: '#FFEB3B',
-              formatter: function(params) {
+              formatter: function (params) {
                 return params.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
               }
+            },
+            itemStyle: {
+              color: '#FFEB3B'
+            },
+            lineStyle: {
+              width: 3,
+              color: '#FFEB3B'
             }
           }
         ]
@@ -621,6 +656,7 @@ export default {
 
       this.lineBarChart.setOption(option);
     }
+
 
   }
 }
