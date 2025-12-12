@@ -1,11 +1,13 @@
 SELECT
         SUM(sub."jtc_quantityCompleted") AS total,
+        SUM(sub."jtc_quantityNeeded") AS tarTotal,
         sub.workcell_id AS id,
         sub.workcell_name AS name
       FROM (
         SELECT DISTINCT
           jtc.jtc_id,
           jtc."jtc_quantityCompleted",
+          jtc."jtc_quantityNeeded",
           jtc_workcell.id AS workcell_id,
           jtc_workcell.name AS workcell_name
         FROM jtc

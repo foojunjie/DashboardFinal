@@ -11,22 +11,14 @@ def get_monthly_output_per_workcell():
     this_month = today.month
     this_year = today.year
 
-    # compute last month
-    if this_month == 1:
-        last_month = 12
-        last_year = this_year - 1
-    else:
-        last_month = this_month - 1
-        last_year = this_year
-
     # load sql file
     with open("queries/monthlyOutputPerWorkcell.sql", "r") as f:
         sql = f.read()
 
-    # query last month
-    output_last_month = run_query(sql, (last_month, last_year))
+    # query this month
+    output_last_month = run_query(sql, (this_month, this_year))
 
-    # return both sets
+    # return set
     return jsonify({
         "last_month": output_last_month
     })
