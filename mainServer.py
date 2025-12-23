@@ -11,6 +11,7 @@ from routes.OEEByWCPerWeek import OEE_by_WorkCell_per_Week
 from routes.OEEByWCPerMonth import OEE_by_WorkCell_per_Month
 from routes.OEEByWC import OEE_by_WorkCell
 from routes.OutputVsDailyTarget import OutputVsDailyTarget
+from routes.COCompletion import COCompletion
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +28,7 @@ app.register_blueprint(OEE_by_WorkCell_per_Week)                    # OEE by Wor
 app.register_blueprint(OEE_by_WorkCell_per_Month)                   # OEE by WorkCell per Month
 app.register_blueprint(OEE_by_WorkCell)                             # OEE by WorkCell
 app.register_blueprint(OutputVsDailyTarget)                         # Output vs Daily Target
+app.register_blueprint(COCompletion)                                # Customer Order Completion
 
 @app.route("/")
 def home():

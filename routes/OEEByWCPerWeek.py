@@ -21,12 +21,14 @@ def get_OEE_by_WorkCell_per_Week():
     workcell_data = {}
 
     for r in Oee:
-        workcell = r["workcell_name"]
-        temp_oee = r["oee_percentage"] if r["oee_percentage"] is not None else 0
-        temp_quality = r["quality_percentage"] if r["quality_percentage"] is not None else 0
-        temp_performance = r["performance_percentage"] if r["performance_percentage"] is not None else 0
-        temp_availability = r["availability_percentage"] if r["availability_percentage"] is not None else 0
-        actenddate = r["actenddate"] 
+        workcell = r["name"]
+        temp_total_good = r["totalgood"] or 0
+        temp_total_expected = r["totalexpected"] or 0
+        temp_ideal_run_time = r["idealruntime"] or 0
+        temp_actual_run_time = r["actualruntime"] or 0
+        temp_planned_production_time_seconds = r["planned_production_time_seconds"] or 0
+        temp_total_downtime_seconds = r["total_downtime_seconds"] or 0
+        actenddate = r["actenddate"]
 
         if actenddate is None:
             continue
@@ -41,20 +43,29 @@ def get_OEE_by_WorkCell_per_Week():
 
         if workcell not in workcell_data:
             workcell_data[workcell] = {
-                "total_oee": 0,
-                "total_quality": 0,
-                "total_performance": 0,
-                "total_availability": 0,
-                "count": 0,
-                "daily": {i: {"total": 0, "count": 0} for i in range(1, 8)}
+                "total_good": 0,
+                "total_expected": 0,
+                "total_ideal_run_time": 0,
+                "total_actual_run_time": 0,
+                "total_planned_production_time_seconds": 0,
+                "total_total_downtime_seconds": 0,
+                "daily": {i: {
+                    "total_good": 0,
+                    "total_expected": 0,
+                    "total_ideal_run_time": 0,
+                    "total_actual_run_time": 0,
+                    "total_planned_production_time_seconds": 0,
+                    "total_total_downtime_seconds": 0,
+                } for i in range(1, 8)}
             }
 
         data = workcell_data[workcell]
-        data["total_oee"] += temp_oee
-        data["total_quality"] += temp_quality
-        data["total_performance"] += temp_performance
-        data["total_availability"] += temp_availability
-        data["count"] += 1
+        data["total_good"] += temp_total_good
+        data["total_expected"] += temp_total_expected
+        data["total_ideal_run_time"] += temp_ideal_run_time
+        data["total_actual_run_time"] += temp_actual_run_time
+        data["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
+        data["total_total_downtime_seconds"] += temp_total_downtime_seconds
 
 
         if day == start_of_week.day:
@@ -73,20 +84,34 @@ def get_OEE_by_WorkCell_per_Week():
             week_day = 7
 
         # Accumulate per workcell
-        data["daily"][week_day]["total"] += temp_oee
-        data["daily"][week_day]["count"] += 1
+        data["daily"][week_day]["total_good"] += temp_total_good
+        data["daily"][week_day]["total_expected"] += temp_total_expected
+        data["daily"][week_day]["total_ideal_run_time"] += temp_ideal_run_time
+        data["daily"][week_day]["total_actual_run_time"] += temp_actual_run_time
+        data["daily"][week_day]["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
+        data["daily"][week_day]["total_total_downtime_seconds"] += temp_total_downtime_seconds
 
     for wc, data in workcell_data.items():
-        count = data["count"]
         final_OEE_per_Week.append({
             "workcell": wc,
-            "oee": round(data["total_oee"] / count, 2) if count else 0,
-            "quality": round(data["total_quality"] / count, 2) if count else 0,
-            "performance": round(data["total_performance"] / count, 2) if count else 0,
-            "availability": round(data["total_availability"] / count, 2) if count else 0,
+            "oee": round(
+                ((float(data["total_good"])*100 / float(data["total_expected"]))
+                *(float(data["total_ideal_run_time"])*100 / float(data["total_actual_run_time"]))
+                *((float(data["total_planned_production_time_seconds"]) - float(data["total_total_downtime_seconds"]))*100 / float(data["total_planned_production_time_seconds"])))
+                /10000, 2) 
+            if data["total_expected"] > 0 and data["total_actual_run_time"] > 0 and data["total_planned_production_time_seconds"] > 0 
+            else 0,
+            "quality": round(float(data["total_good"])*100 / float(data["total_expected"]), 2) if data["total_expected"] else 0,
+            "performance": round(float(data["total_ideal_run_time"])*100 / float(data["total_actual_run_time"]), 2) if data["total_actual_run_time"] else 0,
+            "availability": round((float(data["total_planned_production_time_seconds"]) - float(data["total_total_downtime_seconds"]))*100 / float(data["total_planned_production_time_seconds"]), 2) if  data["total_planned_production_time_seconds"] else 0,
             "daily": [
-                round(data["daily"][m]["total"] / data["daily"][m]["count"], 2) 
-                if data["daily"][m]["count"] > 0 else 0
+               round(
+                    ((float(data["daily"][m]["total_good"])*100 / float(data["daily"][m]["total_expected"]))
+                    *(float(data["daily"][m]["total_ideal_run_time"])*100 / float(data["daily"][m]["total_actual_run_time"]))
+                    *((float(data["daily"][m]["total_planned_production_time_seconds"]) - float(data["daily"][m]["total_total_downtime_seconds"]))*100 / float(data["daily"][m]["total_planned_production_time_seconds"])))
+                      /10000, 2)
+                if  data["daily"][m]["total_expected"] > 0 and data["daily"][m]["total_actual_run_time"] > 0 and data["daily"][m]["total_planned_production_time_seconds"] > 0 
+                else 0
                 for m in range(1, 8)
             ]
         })

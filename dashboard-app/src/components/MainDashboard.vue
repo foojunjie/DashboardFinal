@@ -52,7 +52,7 @@
     <div class="bottom-chart">
       <div class="linebar-box">
         <div class="linebar-header">
-          <div class="linebar-title">Monthly Production Output by Workcell</div>
+          <div class="linebar-title">Production Output by Workcell</div>
 
           <div class="linebar-buttons">
             <button class="switch-btn" @click="showMonthlyFake">Monthly</button>
@@ -95,13 +95,19 @@ export default {
       activeMode: 'monthlyFake',  // default mode
     }
   },
-  mounted() {
+  async mounted() {
     this.initPieChart()
     this.initWeeklyMeter()
     this.initMonthlyMeter()
     this.initProductionMeter()
     this.initLineBarChart()
-    this.loadPartDropdown()
+
+    await this.loadPartDropdown()
+
+    if (this.productList.length > 0 && !this.selectedPart) {
+      this.selectedPart = this.productList[0].customer_part_num
+      await this.loadSummaryCO(this.selectedPart)
+    }
     
     // Handle resize
     window.addEventListener('resize', this.handleResize)
@@ -139,14 +145,33 @@ export default {
     },
 
     async onDateChange() {
-      // Load parts available for the selected date
+      const oldPart = this.selectedPart
+
       await this.loadPartDropdown()
-      // Optionally, auto-select first part if none selected
-      if (this.productList.length > 0) {
+
+      // keep part if still exists for new date
+      const stillExists = this.productList.some(
+        p => p.customer_part_num === oldPart
+      )
+
+      if (stillExists) {
+        this.selectedPart = oldPart
+        await this.loadSummaryCO(this.selectedPart)
+      } else if (this.productList.length > 0) {
         this.selectedPart = this.productList[0].customer_part_num
         await this.loadSummaryCO(this.selectedPart)
       } else {
         this.selectedPart = null
+      }
+
+      if (this.activeMode === 'daily') {
+        await this.showDailyLive()
+      } else if (this.activeMode === 'weekly') {
+        await this.showWeeklyLive()
+      } else if (this.activeMode === 'monthly') {
+        await this.showMonthlyLive()
+      } else if (this.activeMode === 'monthlyFake') {
+        this.showMonthlyFake()
       }
     },
 
@@ -170,8 +195,6 @@ export default {
         this.$emit('api-loading', false)
       }
     },
-
-
 
     async sendSelectedPart() {
       // Reuse loadSummaryCO to maintain consistent parsing and chart updates
@@ -403,7 +426,8 @@ export default {
     },
     async initLineBarChart() {
       this.lineBarChart = echarts.init(this.$refs.lineBarChart)
-      const response = await fetch('http://127.0.0.1:8000/api/monthlyOutputperWorkcell')
+      const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : '';
+      const response = await fetch(`http://127.0.0.1:8000/api/monthlyOutputperWorkcell${queryDate}`)
       const result = await response.json()
 
       const postgresData = result.last_month || []
@@ -542,7 +566,8 @@ export default {
 
       this.activeMode = 'weekly'
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/weeklyOutput`);
+        const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : '';
+        const res = await fetch(`http://127.0.0.1:8000/api/weeklyOutput${queryDate}`);
         const result = await res.json();
 
         const data = result.this_week || [];
@@ -559,7 +584,8 @@ export default {
     async showMonthlyLive() {
       this.activeMode = 'monthly'
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/monthlyOutputperWorkcell');
+        const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : '';
+        const response = await fetch(`http://127.0.0.1:8000/api/monthlyOutputperWorkcell${queryDate}`);
         const result = await response.json();
 
         const data = result.last_month || [];
@@ -574,10 +600,10 @@ export default {
     },
 
     async showDailyLive() {
-
       this.activeMode = 'daily'
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/dailyOutput`);
+        const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : '';
+        const res = await fetch(`http://127.0.0.1:8000/api/dailyOutput${queryDate}`);
         const result = await res.json();
 
         const data = result.today || [];
@@ -669,8 +695,8 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  height: 100vh;
-  max-height: 100vh;
+  height: 100%;
+  max-height: 100%;
   overflow-y: hidden;
   overflow-x: hidden;
   box-sizing: border-box;

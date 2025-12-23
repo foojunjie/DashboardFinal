@@ -8,6 +8,8 @@
         <button @click="currentView = 'table2'" :class="{ active: currentView === 'table2' }">Table E25-100-WF</button>
         <button @click="currentView = 'oee'" :class="{ active: currentView === 'oee' }">OEE by Work Cell</button>
         <button @click="currentView = 'OutputVsDailyTarget'" :class="{ active: currentView === 'OutputVsDailyTarget' }">Output vs Daily Target</button>
+        <button @click="currentView = 'attendance'" :class="{ active: currentView === 'attendance' }">Attendance</button>
+        <button @click="currentView = 'COCompletion'" :class="{ active: currentView === 'COCompletion' }">Customer Order Completion</button>
       </div>
       
       <!-- Connection Status -->
@@ -46,10 +48,12 @@
 
 <script>
 import MainDashboard from './components/MainDashboard.vue'
-import OEEByWorkCell from './components/OEEByWorkCell.vue';
+import OEEByWorkCell from './components/OEEByWorkCell.vue'
 import TableDashboard from './components/tableDashboard.vue'
 import TableDashboard2 from './components/tableDashboard2.vue'
-import OutputVsDailyTarget from './components/OutputVsDailyTarget.vue';
+import OutputVsDailyTarget from './components/OutputVsDailyTarget.vue'
+import Attendance from './components/AttendanceView.vue'
+import CustomerOrderCompletion from './components/CustomerOrderCompletion.vue'
 
 export default {
   name: 'App',
@@ -58,7 +62,9 @@ export default {
     TableDashboard,
     TableDashboard2,
     OEEByWorkCell,
-    OutputVsDailyTarget
+    OutputVsDailyTarget,
+    Attendance,
+    CustomerOrderCompletion,
   },
   data() {
     return {
@@ -71,12 +77,11 @@ export default {
   computed: {
     currentComponent() {
       return this.currentView === 'dashboard' ? 'MainDashboard' 
-      : this.currentView === 'oee'
-      ? 'OEEByWorkCell'
+      : this.currentView === 'oee' ? 'OEEByWorkCell'
       : this.currentView == 'OutputVsDailyTarget' ? 'OutputVsDailyTarget'
-      : this.currentView === 'table'
-      ? 'TableDashboard'
-      : 'TableDashboard2';
+      : this.currentView === 'attendance' ? 'attendance'
+      : this.currentView === 'COCompletion' ? 'CustomerOrderCompletion'
+      : this.currentView === 'table' ? 'TableDashboard' : 'TableDashboard2';
     }
   },
   methods: {
