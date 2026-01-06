@@ -2,14 +2,28 @@
   <div class="app-wrapper">
     <!-- Global Connection Status Bar -->
     <div class="app-header">
-      <div class="nav-buttons">
-        <button @click="currentView = 'dashboard'" :class="{ active: currentView === 'dashboard' }">Output status</button>
-        <button @click="currentView = 'table'" :class="{ active: currentView === 'table' }">Table E24-100-WF</button>
-        <button @click="currentView = 'table2'" :class="{ active: currentView === 'table2' }">Table E25-100-WF</button>
-        <button @click="currentView = 'oee'" :class="{ active: currentView === 'oee' }">OEE by Work Cell</button>
-        <button @click="currentView = 'OutputVsDailyTarget'" :class="{ active: currentView === 'OutputVsDailyTarget' }">Output vs Daily Target</button>
-        <button @click="currentView = 'attendance'" :class="{ active: currentView === 'attendance' }">Attendance</button>
-        <button @click="currentView = 'COCompletion'" :class="{ active: currentView === 'COCompletion' }">Customer Order Completion</button>
+      <div class="nav-wrapper">
+        <button class="scroll-btn" @click="scrollNav('left')">‹</button>
+
+        <div class="nav-buttons" ref="navContainer">
+          <button @click="currentView = 'dashboard'" :class="{ active: currentView === 'dashboard' }">Output status</button>
+          <button @click="currentView = 'table'" :class="{ active: currentView === 'table' }">Table E24-100-WF</button>
+          <button @click="currentView = 'table2'" :class="{ active: currentView === 'table2' }">Table E25-100-WF</button>
+          <button @click="currentView = 'OutputVsDailyTarget'" :class="{ active: currentView === 'OutputVsDailyTarget' }">Output vs Daily Target</button>
+          <button @click="currentView = 'attendance'" :class="{ active: currentView === 'attendance' }">Attendance</button>
+          <button @click="currentView = 'COCompletion'" :class="{ active: currentView === 'COCompletion' }">Customer Order Completion</button>
+          <button @click="currentView = 'oee'" :class="{ active: currentView === 'oee' }">OEE by Work Cell</button>
+          <button @click="currentView = 'oeeranking'" :class="{ active: currentView === 'oeeranking' }">OEEByWorkCellRanking</button>
+          <button @click="currentView = 'oeerankingcombine'" :class="{ active: currentView === 'oeerankingcombine' }">OEEByWorkCellRankingCombine</button>
+          <button @click="currentView = 'oeebyzone'" :class="{ active: currentView === 'oeebyzone' }">OEE by Zone</button>
+          <button @click="currentView = 'oeezoneranking'" :class="{ active: currentView === 'oeezoneranking' }">OEEByZoneRanking</button>
+          <button @click="currentView = 'oeezonerankingcombine'" :class="{ active: currentView === 'oeezonerankingcombine' }">OEEByZoneRankingCombine</button>
+          <button @click="currentView = 'oeebystation'" :class="{ active: currentView === 'oeebystation' }">OEE by Station</button>
+          <button @click="currentView = 'oeestationranking'" :class="{ active: currentView === 'oeestationranking' }">OEEByStationRanking</button>
+          <button @click="currentView = 'oeestationrankingcombine'" :class="{ active: currentView === 'oeestationrankingcombine' }">OEEByStationRankingCombine</button>
+        </div>
+
+        <button class="scroll-btn" @click="scrollNav('right')">›</button>
       </div>
       
       <!-- Connection Status -->
@@ -54,6 +68,14 @@ import TableDashboard2 from './components/tableDashboard2.vue'
 import OutputVsDailyTarget from './components/OutputVsDailyTarget.vue'
 import Attendance from './components/AttendanceView.vue'
 import CustomerOrderCompletion from './components/CustomerOrderCompletion.vue'
+import OEEByWorkCellRanking from './components/OEEByWorkCellRanking.vue'
+import OEEByWorkCellRankingCombine from './components/OEEByWorkCellRankingCombine.vue'
+import OEEByZone from './components/OEEByZone.vue'
+import OEEByZoneRanking from './components/OEEByZoneRanking.vue'
+import OEEByZoneRankingCombine from './components/OEEByZoneRankingCombine.vue'
+import OEEByStation from './components/OEEByStation.vue'
+import OEEByStationRanking from './components/OEEByStationRanking.vue'
+import OEEByStationRankingCombine from './components/OEEByStationRankingCombine.vue'
 
 export default {
   name: 'App',
@@ -62,6 +84,14 @@ export default {
     TableDashboard,
     TableDashboard2,
     OEEByWorkCell,
+    OEEByWorkCellRanking,
+    OEEByWorkCellRankingCombine,
+    OEEByZone,
+    OEEByZoneRanking,
+    OEEByZoneRankingCombine,
+    OEEByStation,
+    OEEByStationRanking,
+    OEEByStationRankingCombine,
     OutputVsDailyTarget,
     Attendance,
     CustomerOrderCompletion,
@@ -78,6 +108,14 @@ export default {
     currentComponent() {
       return this.currentView === 'dashboard' ? 'MainDashboard' 
       : this.currentView === 'oee' ? 'OEEByWorkCell'
+      : this.currentView === 'oeeranking' ? 'OEEByWorkCellRanking'
+      : this.currentView === 'oeerankingcombine' ? 'OEEByWorkCellRankingCombine'
+      : this.currentView === 'oeebyzone' ? 'OEEByZone'
+      : this.currentView === 'oeezoneranking' ? 'OEEByZoneRanking'
+      : this.currentView === 'oeezonerankingcombine' ? 'OEEByZoneRankingCombine'
+      : this.currentView === 'oeebystation' ? 'OEEByStation'
+      : this.currentView === 'oeestationranking' ? 'OEEByStationRanking'
+      : this.currentView === 'oeestationrankingcombine' ? 'OEEByStationRankingCombine'
       : this.currentView == 'OutputVsDailyTarget' ? 'OutputVsDailyTarget'
       : this.currentView === 'attendance' ? 'attendance'
       : this.currentView === 'COCompletion' ? 'CustomerOrderCompletion'
@@ -96,6 +134,31 @@ export default {
     },
     closeError() {
       this.errorMessage = ''
+    },
+    scrollNav(direction) {
+      const c = this.$refs.navContainer
+      if (!c) return
+
+      const amount = 200
+      const maxScroll = c.scrollWidth - c.clientWidth
+
+      if (direction === "left") {
+        if (c.scrollLeft <= 0) {
+          // Jump instantly to end
+          c.scrollLeft = maxScroll
+        } else {
+          c.scrollBy({ left: -amount, behavior: "smooth" })
+        }
+      }
+
+      if (direction === "right") {
+        if (c.scrollLeft >= maxScroll) {
+          // Jump instantly to start
+          c.scrollLeft = 0
+        } else {
+          c.scrollBy({ left: amount, behavior: "smooth" })
+        }
+      }
     }
   }
 }
@@ -335,4 +398,42 @@ export default {
   background-color: #ff8888;
   box-shadow: 0 0 10px #ff666644;
 }
+
+.nav-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 92%;
+}
+
+.scroll-btn {
+  background: #1a1a1a;
+  color: white;
+  border: 2px solid #666;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.scroll-btn:hover {
+  background: #00baff;
+  border-color: #00baff;
+  color: black;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;  /* Firefox */
+}
+
+.nav-buttons::-webkit-scrollbar {
+  display: none; /* Chrome/Edge */
+}
+
 </style>

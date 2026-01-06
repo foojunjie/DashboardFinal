@@ -18,3 +18,12 @@ def run_query(query, params=None):
     cur.close()
     conn.close()
     return rows
+
+def run_command(sql):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(sql)
+    conn.commit()
+    cur.close()
+    conn.close()
+

@@ -14,7 +14,9 @@ FROM (
     LEFT JOIN jtc_output_cycle ON jtc.jtc_id = jtc_output_cycle.jtc_id
     LEFT JOIN jtc_station ON jtc_output_cycle.station_id = jtc_station.id
     LEFT JOIN jtc_workcell ON jtc_workcell.id = jtc_station.workcell_id
-    WHERE jtc."jtc_actualEndDate"::date = %s::date
+    WHERE extract (day from jtc."jtc_actualEndDate") = %s
+	  and extract (month from jtc."jtc_actualEndDate") = %s
+	  and extract (year from jtc."jtc_actualEndDate") = %s
       AND jtc_workcell.id IS NOT NULL
 ) AS sub
 GROUP BY sub.workcell_id, sub.workcell_name

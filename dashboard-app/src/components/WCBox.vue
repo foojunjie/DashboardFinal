@@ -64,9 +64,11 @@ export default {
     barColor() { 
       return `bar-${this.wc.bars}` || 'bar-gray' 
     }, 
-    statusClass() { 
-      return this.wc.status === 'Running' ? 'running' : 'not-running' 
-    }, 
+    statusClass() {
+      if (this.wc.status === 'Running') return 'running'
+      if (this.wc.status === 'Partially Running') return 'partially'
+      return 'idle' // for Idle
+    },
     connectionClass() { 
       const conn = this.wc.connection || 'Connected' 
       if (conn === 'Connected') return 'connected' 
@@ -139,7 +141,8 @@ export default {
           trigger: 'axis',
           formatter: params => {
             const p = params[0]
-            return `${p.axisValue}<br/>OEE: ${p.data.toFixed(1)}%`
+            const value = typeof p.data === 'object' ? p.data.value : p.data;
+            return `${p.axisValue}<br/>OEE: ${value.toFixed(1)}%`
           },
           backgroundColor: 'rgba(0,0,0,0.8)',
           borderColor: '#00baff',
@@ -228,7 +231,12 @@ export default {
   color: white;
 }
 
-.wc-status.not-running {
+.wc-status.partially {
+  background-color: #ff9800;
+  color: white;
+}
+
+.wc-status.idle {
   background-color: #ff6b6b;
   color: white;
 }

@@ -2,7 +2,7 @@
   <div class="dashboard-container">
     <!-- Header -->
     <div class="header">
-      OEE BY WC (OVERALL)
+      OEE BY WorkCell (OVERALL)
     </div>
 
     <!-- Date Picker for DAY tab -->
@@ -15,15 +15,33 @@
       />
     </div>
 
-    <!-- Grid: 4 top + 4 bottom -->
+    <div v-if="wcList.length > 8" class="nav-controls">
+        <button class="swipe-btn" @click="prevBoxes">◀ PREV</button>
+        
+        <div class="page-indicator">
+            <span class="current">{{ boxStartIndex + 1 }}-{{ Math.min(boxStartIndex + 8, wcList.length) }}</span>
+            <span class="total">of {{ wcList.length }}</span>
+        </div>
+
+        <button class="swipe-btn" @click="nextBoxes">NEXT ▶</button>
+    </div>
+
     <div class="boxes-grid">
-      <!-- Top Row (4 boxes) -->
       <div class="row">
-        <WCBox v-for="wc in wcList.slice(0, 4)" :key="wc.id" :wc="wc" :period="activePeriod" />
+        <WCBox 
+          v-for="wc in topRow" 
+          :key="wc.id + '-' + activePeriod" 
+          :wc="wc" 
+          :period="activePeriod" 
+        />
       </div>
-      <!-- Bottom Row (4 boxes) -->
       <div class="row">
-        <WCBox v-for="wc in wcList.slice(4, 8)" :key="wc.id" :wc="wc" :period="activePeriod" />
+        <WCBox 
+          v-for="wc in bottomRow" 
+          :key="wc.id + '-' + activePeriod" 
+          :wc="wc" 
+          :period="activePeriod" 
+        />
       </div>
     </div>
 
@@ -50,6 +68,7 @@ export default {
     const today = new Date()
     const todayISO = today.toISOString().split('T')[0]
     return {
+      boxStartIndex: 0,
       tabs: ['FAKE', 'TODAY', 'DAY', 'WEEKLY', 'MONTHLY', 'ALL TIME'],
       activePeriod: 'FAKE',
       selectedDate: todayISO,
@@ -267,6 +286,9 @@ export default {
         }
       }
     }, 5 * 60 * 1000) // 5 minutes in milliseconds
+    setInterval(() => {
+            this.loadStatus()
+        }, 30 * 1000) // every 30 seconds
   },
   beforeUnmount() {
     // Clear interval on component unmount
@@ -274,9 +296,35 @@ export default {
       clearInterval(this.refreshInterval)
     }
   },
+  computed: {
+    currentSet() {
+      return this.wcList || [];
+    },
+    topRow() {
+      return this.currentSet.slice(this.boxStartIndex, this.boxStartIndex + 4);
+    },
+    bottomRow() {
+      return this.currentSet.slice(this.boxStartIndex + 4, this.boxStartIndex + 8);
+    }
+  },
   methods: {
+    nextBoxes() {
+      if (this.boxStartIndex + 8 >= this.wcList.length) {
+        this.boxStartIndex = 0;
+      } else {
+        this.boxStartIndex += 8;
+      }
+    },
+    prevBoxes() {
+      if (this.boxStartIndex - 8 < 0) {
+        this.boxStartIndex = Math.floor((this.wcList.length - 1) / 8) * 8;
+      } else {
+        this.boxStartIndex -= 8;
+      }
+    },
     selectPeriod(period) {
       this.activePeriod = period
+      this.boxStartIndex = 0;
       if (period === 'FAKE') {
         this.wcList = JSON.parse(JSON.stringify(this.fakeWcList))
         this.$emit('api-connected', false)
@@ -392,8 +440,8 @@ export default {
           return {
             id: index + 1,
             title: item.workcell || `WC ${index + 1}`,
-            status: item.status || 'Running',
-            connection: item.connection || 'Connected',
+            status: item.status || 'Idle',
+            connection: item.connection || 'Not Connected',
             oee: oeeValue,
             availability: availValue,
             performance: perfValue,
@@ -402,6 +450,8 @@ export default {
             hourlyData: chartData
           }
         })
+
+        this.loadStatus()
         
         // Mark API as connected on success
         this.$emit('api-connected', true)
@@ -415,6 +465,47 @@ export default {
         this.$emit('api-loading', false)
       }
     },
+    async loadStatus() {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/Running_Status_Workcell')
+        if (!response.ok) throw new Error(`API error: ${response.status}`)
+
+        this.$emit('api-loading', true)
+        this.$emit('api-error', '')
+
+        const data = await response.json()
+        const statusList = data.Status
+
+        // Update wcList status based on API
+        this.wcList = this.wcList.map(wc => {
+            // Find all API entries matching this workcell
+            const matches = statusList.filter(s => s.name.trim().toLowerCase() === wc.title.trim().toLowerCase())
+
+            if (matches.length === 0) {
+                // No match found, keep existing status
+                return wc
+            }
+
+            const allTrue = matches.every(s => s.is_running)
+            const allFalse = matches.every(s => !s.is_running)
+
+            let newStatus = 'Idle'
+            if (allTrue) {
+                newStatus = 'Running'
+            } else if (!allFalse) {
+                newStatus = 'Partially Running'
+            }
+            return { ...wc, status: newStatus, connection: 'Connected'}
+        })
+        this.$emit('api-connected', true)
+      } catch (error) {
+        console.error("Failed to load WC status:", error)
+        this.$emit('api-connected', false)
+        this.$emit('api-error', `Failed to fetch status data: ${error.message}`)
+      } finally {
+          this.$emit('api-loading', false)
+      }
+    }
   }
 }
 </script>
@@ -532,5 +623,54 @@ export default {
   outline: none;
   border-color: #00d4ff;
   box-shadow: 0 0 12px #00baff66;
+}
+
+.nav-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.nav-btn {
+  background: #2e2e2e;
+  color: #00baff;
+  border: 2px solid #00baff;
+  padding: 10px 25px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.nav-btn:hover {
+  background: #00baff;
+  color: white;
+  box-shadow: 0 0 15px rgba(0, 186, 255, 0.4);
+}
+
+.page-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-indicator .count {
+  font-size: 20px;
+  font-weight: bold;
+  color: #00baff;
+  font-family: monospace;
+}
+
+.page-indicator .total {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
 }
 </style>

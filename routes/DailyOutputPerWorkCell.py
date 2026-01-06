@@ -7,7 +7,7 @@ dailyOutputperWorkcell = Blueprint("dailyOutputperWorkcell", __name__)
 
 @dailyOutputperWorkcell.route("/api/dailyOutput", methods=["GET"])
 def get_daily_output_per_workcell():
-    todayTime = date.today()
+    today = date.today()
 
     # Check if a specific date was requested
     date_param = request.args.get('date')
@@ -18,12 +18,16 @@ def get_daily_output_per_workcell():
         except Exception:
             pass  # Use default today if parse fails
 
+    this_day = today.day
+    this_month = today.month
+    this_year = today.year
+
     # load sql file
     with open("queries/DailyOutputPerWorkcell.sql", "r") as f:
         sql = f.read()
 
     # query today
-    today = run_query(sql, (todayTime,))
+    today = run_query(sql, (this_day, this_month, this_year))
 
     # return set
     return jsonify({

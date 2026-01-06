@@ -22,37 +22,22 @@ def get_OEE_by_WorkCell_per_Day():
     this_year = today.year
     this_day = today.day
 
-    with open("queries/OEEbyWCperDay.sql", "r") as f:
-        sql = f.read()
-
-    Oee = run_query(sql, (this_day, this_month, this_year))
+    this_date = date(this_year, this_month, this_day)
 
     final_OEE_per_Day = []
     workcell_data = {}
 
-    for r in Oee:
-        workcell = r["name"]
-        temp_total_good = r["totalgood"] or 0
-        temp_total_expected = r["totalexpected"] or 0
-        temp_ideal_run_time = r["idealruntime"] or 0
-        temp_actual_run_time = r["actualruntime"] or 0
-        temp_planned_production_time_seconds = r["planned_production_time_seconds"] or 0
-        temp_total_downtime_seconds = r["total_downtime_seconds"] or 0
-        actenddate = r["actenddate"]
+    with open("queries/WorkcellZoneStation.sql", "r") as f:
+        sql = f.read()
+    workcells = run_query(sql, ())
 
-        if actenddate is None:
-            continue
-
-        # Convert string timestamp with timezone
-        if isinstance(actenddate, str):
-            # Remove timezone manually (+08 part)
-            actenddate = actenddate.split("+")[0]
-            actenddate = datetime.strptime(actenddate, "%Y-%m-%d %H:%M:%S.%f")
-
-        hour = actenddate.hour
+    for row in workcells:
+        workcell = row["name"]
+        stationID = row["stationid"]
 
         if workcell not in workcell_data:
             workcell_data[workcell] = {
+                "stations": [stationID],  # list of station IDs
                 "total_good": 0,
                 "total_expected": 0,
                 "total_ideal_run_time": 0,
@@ -68,47 +53,100 @@ def get_OEE_by_WorkCell_per_Day():
                     "total_total_downtime_seconds": 0,
                 } for i in range(1, 25)}
             }
+        else:
+            workcell_data[workcell]["stations"].append(stationID)
 
-        data = workcell_data[workcell]
-        data["total_good"] += temp_total_good
-        data["total_expected"] += temp_total_expected
-        data["total_ideal_run_time"] += temp_ideal_run_time
-        data["total_actual_run_time"] += temp_actual_run_time
-        data["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
-        data["total_total_downtime_seconds"] += temp_total_downtime_seconds
+    with open("queries/OEEbyStationPerDay.sql", "r") as f:
+        sql = f.read()
 
-        # Accumulate per workcell
-        data["hourly"][hour]["total_good"] += temp_total_good
-        data["hourly"][hour]["total_expected"] += temp_total_expected
-        data["hourly"][hour]["total_ideal_run_time"] += temp_ideal_run_time
-        data["hourly"][hour]["total_actual_run_time"] += temp_actual_run_time
-        data["hourly"][hour]["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
-        data["hourly"][hour]["total_total_downtime_seconds"] += temp_total_downtime_seconds
+    Oee = run_query(sql, (this_date, this_date, this_date, this_date, this_date, this_date, this_date,
+                            this_date, this_date, this_date, this_date, this_date, this_date, this_date))
+        
+    for r in Oee:
+        stationid = r["id"]
+        temp_total_good = r["totalgood"] or 0
+        temp_total_expected = r["totalexpected"] or 0
+        temp_ideal_run_time = r["idealruntime"] or 0
+        temp_actual_run_time = r["actualruntime"] or 0
+        temp_planned_production_time_seconds = r["planned_production_time_seconds"] or 0
+        temp_total_downtime_seconds = r["total_downtime_seconds"] or 0
+
+        if temp_total_expected == 0 or temp_ideal_run_time == 0 or temp_actual_run_time == 0 \
+        or temp_planned_production_time_seconds == 0 or temp_total_downtime_seconds > temp_planned_production_time_seconds:
+            continue
+
+        for wc, data in workcell_data.items():
+            if stationid in data["stations"]:
+                data["total_good"] += temp_total_good
+                data["total_expected"] += temp_total_expected
+                data["total_ideal_run_time"] += temp_ideal_run_time
+                data["total_actual_run_time"] += temp_actual_run_time
+                data["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
+                data["total_total_downtime_seconds"] += temp_total_downtime_seconds
+
+    with open("queries/OEEbyStationPerHour.sql", "r") as f:
+        sql = f.read()
+
+    for i in range(1,25):
+        Oee_per_hour = run_query(sql, (i, this_date, this_date, i, this_date, this_date, i, this_date, this_date, i, this_date,
+                                this_date, i, this_date, this_date, i, i, this_date, this_date, this_date, this_date))
+        
+        for r in Oee_per_hour:
+            stationid = r["id"]
+            temp_total_good = r["totalgood"] or 0
+            temp_total_expected = r["totalexpected"] or 0
+            temp_ideal_run_time = r["idealruntime"] or 0
+            temp_actual_run_time = r["actualruntime"] or 0
+            temp_planned_production_time_seconds = r["planned_production_time_seconds"] or 0
+            temp_total_downtime_seconds = r["total_downtime_seconds"] or 0
+
+            if temp_total_expected == 0 or temp_ideal_run_time == 0 or temp_actual_run_time == 0 \
+            or temp_planned_production_time_seconds == 0 or temp_total_downtime_seconds > temp_planned_production_time_seconds:
+                continue
+
+            for wc, data in workcell_data.items():
+                if stationid in data["stations"]:
+                    m = data["hourly"][i]
+                    m["total_good"] += temp_total_good
+                    m["total_expected"] += temp_total_expected
+                    m["total_ideal_run_time"] += temp_ideal_run_time
+                    m["total_actual_run_time"] += temp_actual_run_time
+                    m["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
+                    m["total_total_downtime_seconds"] += temp_total_downtime_seconds
 
     for wc, data in workcell_data.items():
+        # Overall OEE
+        quality = min(max(round((float(data["total_good"])*100 / float(data["total_expected"])), 2), 0), 100) \
+          if data["total_expected"] > 0 else 0
+
+        performance = min(max(round((float(data["total_ideal_run_time"])*100 / float(data["total_actual_run_time"])), 2), 0), 100) \
+                    if data["total_actual_run_time"] > 0 else 0
+
+        availability = min(max(round(((float(data["total_planned_production_time_seconds"]) - float(data["total_total_downtime_seconds"])) * 100 /
+                            float(data["total_planned_production_time_seconds"])), 2), 0), 100) \
+                    if data["total_planned_production_time_seconds"] > 0 else 0
+
+        oee = round((quality * performance * availability) / 10000, 2)
+
+        # Monthly OEE
+        hourly_oee = []
+        for m in range(1, 25):
+            md = data["hourly"][m]
+            if md["total_expected"]>0 and md["total_actual_run_time"]>0 and md["total_planned_production_time_seconds"]>0:
+                q = min(max(float(md["total_good"]) * 100 / float(md["total_expected"]), 0), 100)
+                p = min(max(float(md["total_ideal_run_time"]) * 100 / float(md["total_actual_run_time"]), 0), 100)
+                a = min(max((float(md["total_planned_production_time_seconds"]) - float(md["total_total_downtime_seconds"])) * 100 / float(md["total_planned_production_time_seconds"]), 0), 100)
+                hourly_oee.append(round(q * p * a / 10000, 2))
+            else:
+                hourly_oee.append(0)
+
         final_OEE_per_Day.append({
             "workcell": wc,
-            "oee": round(
-                ((float(data["total_good"])*100 / float(data["total_expected"]))
-                *(float(data["total_ideal_run_time"])*100 / float(data["total_actual_run_time"]))
-                *((float(data["total_planned_production_time_seconds"]) - float(data["total_total_downtime_seconds"]))*100 / float(data["total_planned_production_time_seconds"])))
-                /10000, 2) 
-            if data["total_expected"] > 0 and data["total_actual_run_time"] > 0 and data["total_planned_production_time_seconds"] > 0 
-            else 0,
-            "quality": round(float(data["total_good"])*100 / float(data["total_expected"]), 2) if data["total_expected"] else 0,
-            "performance": round(float(data["total_ideal_run_time"])*100 / float(data["total_actual_run_time"]), 2) if data["total_actual_run_time"] else 0,
-            "availability": round((float(data["total_planned_production_time_seconds"]) - float(data["total_total_downtime_seconds"]))*100 / float(data["total_planned_production_time_seconds"]), 2) if  data["total_planned_production_time_seconds"] else 0,
-            "hourly": [
-                round(
-                    ((float(data["hourly"][m]["total_good"])*100 / float(data["hourly"][m]["total_expected"]))
-                    *(float(data["hourly"][m]["total_ideal_run_time"])*100 / float(data["hourly"][m]["total_actual_run_time"]))
-                    *((float(data["hourly"][m]["total_planned_production_time_seconds"]) - float(data["hourly"][m]["total_total_downtime_seconds"]))*100 / float(data["hourly"][m]["total_planned_production_time_seconds"])))
-                      /10000, 2)
-                if  data["hourly"][m]["total_expected"] > 0 and data["hourly"][m]["total_actual_run_time"] > 0 and data["hourly"][m]["total_planned_production_time_seconds"] > 0 
-                else 0
-                for m in range(1, 25)
-            ]
+            "oee": oee,
+            "quality": quality,
+            "performance": performance,
+            "availability": availability,
+            "hourly": hourly_oee
         })
-
 
     return jsonify({"Oee_per_Day": final_OEE_per_Day})

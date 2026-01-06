@@ -73,12 +73,14 @@ import * as echarts from 'echarts'
 export default {
   name: 'MainDashboard',
   data() {
-    const today = new Date()
-    const todayISO = today.toISOString().split('T')[0]
+    const localDate = new Date();
+    // Adjusts for timezone offset to get the correct local YYYY-MM-DD
+    const todayISO = new Date(localDate.getTime() - (localDate.getTimezoneOffset() * 60000))
+                    .toISOString().split('T')[0];
     return {
+      selectedDate: todayISO,
       productList: [],
       selectedPart: null,
-      selectedDate: todayISO,
       productionResult: null,
       deliverResult: null,
       target: null,
@@ -113,16 +115,30 @@ export default {
     window.addEventListener('resize', this.handleResize)
 
     this.refreshInterval = setInterval(() => {
-      if (this.activeMode === 'weekly') {
-        this.showWeeklyLive()
-      } else if (this.activeMode === 'monthly') {
-        this.showMonthlyLive()
-      } else if (this.activeMode === 'monthlyFake') {
-        this.showMonthlyFake()
+      // 1. Calculate what "Today" actually is right now
+      const now = new Date();
+      const actualToday = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
+                            .toISOString().split('T')[0];
+
+      // 2. Check is it Today
+      if (this.selectedDate >= actualToday || this.isShowingCurrentDate(actualToday)) {
+          this.selectedDate = actualToday;
       }
 
-      this.loadSummaryCO(this.selectedPart)
-    }, 300000)
+      // 3. Proceed with the refresh
+      this.loadSummaryCO(this.selectedPart);
+
+      const modeMap = {
+        'weekly': this.showWeeklyLive,
+        'monthly': this.showMonthlyLive,
+        'daily': this.showDailyLive,
+        'monthlyFake': this.showMonthlyFake
+      };
+      
+      if (modeMap[this.activeMode]) {
+        modeMap[this.activeMode]();
+      }
+    }, 300000);
   },
 
   beforeUnmount() {
@@ -142,6 +158,14 @@ export default {
       this.monthlyMeter?.resize()
       this.productionMeter?.resize()
       this.lineBarChart?.resize()
+    },
+
+    isShowingCurrentDate(actualToday) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayISO = yesterday.toISOString().split('T')[0];
+      
+      return this.selectedDate === actualToday || this.selectedDate === yesterdayISO;
     },
 
     async onDateChange() {
@@ -425,6 +449,7 @@ export default {
       this.productionMeter.setOption(option)
     },
     async initLineBarChart() {
+      this.$emit('api-loading', true)
       this.lineBarChart = echarts.init(this.$refs.lineBarChart)
       const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : '';
       const response = await fetch(`http://127.0.0.1:8000/api/monthlyOutputperWorkcell${queryDate}`)
@@ -549,7 +574,9 @@ export default {
           }
         ]
       }
+      this.$emit('api-connected', true)
       this.lineBarChart.setOption(option)
+      this.$emit('api-loading', false)
     },
 
     showMonthlyFake() {
@@ -563,7 +590,7 @@ export default {
     },
 
     async showWeeklyLive() {
-
+      this.$emit('api-loading', true)
       this.activeMode = 'weekly'
       try {
         const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : '';
@@ -576,12 +603,18 @@ export default {
         const tarTotals = data.map(i => Number(i.tartotal));
 
         this.updateLineBarChart(names, totals, tarTotals);
-      } catch (e) {
-        console.error("Weekly API error:", e);
+        this.$emit('api-connected', true)
+      } catch (err) {
+        console.error("Error fetching weekly:", err);
+        this.$emit('api-error', `Failed to load data: ${err.message}`)
+        this.$emit('api-connected', false)
+      }finally {
+        this.$emit('api-loading', false)
       }
     },
 
     async showMonthlyLive() {
+      this.$emit('api-loading', true)
       this.activeMode = 'monthly'
       try {
         const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : '';
@@ -594,12 +627,18 @@ export default {
         const tarTotals = data.map(i => Number(i.tartotal));
 
         this.updateLineBarChart(names, totals, tarTotals);
+        this.$emit('api-connected', true)
       } catch (e) {
         console.error("MonthlyLive error:", e);
+        this.$emit('api-error', `Failed to load data: ${e.message}`)
+        this.$emit('api-connected', false)
+      }finally {
+        this.$emit('api-loading', false)
       }
     },
 
     async showDailyLive() {
+      this.$emit('api-loading', true)
       this.activeMode = 'daily'
       try {
         const queryDate = this.selectedDate ? `?date=${this.selectedDate}` : '';
@@ -612,8 +651,13 @@ export default {
         const tarTotals = data.map(i => Number(i.tartotal));
 
         this.updateLineBarChart(names, totals, tarTotals);
+        this.$emit('api-connected', true)
       } catch (e) {
         console.error("Weekly API error:", e);
+        this.$emit('api-error', `Failed to load data: ${e.message}`)
+        this.$emit('api-connected', false)
+      }finally {
+          this.$emit('api-loading', false)
       }
     },
 
