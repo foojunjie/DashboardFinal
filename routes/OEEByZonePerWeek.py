@@ -51,15 +51,17 @@ def get_OEE_by_Zone_per_Week():
             zone_data[workcell][zone]["stations"].append(stationID)
 
 
-    with open("queries/OEEbyStationPerDay.sql", "r") as f:
+    with open("queries/OEEbyStationPerDetails.sql", "r") as f:
         sql = f.read()
 
-    for count in range(1,8):
-        Oee = run_query(sql, (this_date, this_date, this_date, this_date, this_date, this_date, this_date,
-                            this_date, this_date, this_date, this_date, this_date, this_date, this_date))
-        
+    Oee = run_query(sql, ())
+
+    for count in range(1,8):        
         for r in Oee:
             stationid = r["id"]
+            stationDay = r["day"] or 0
+            stationMonth = r["month"] or 0
+            stationYear = r["year"] or 0
             temp_total_good = r["totalgood"] or 0
             temp_total_expected = r["totalexpected"] or 0
             temp_ideal_run_time = r["idealruntime"] or 0
@@ -73,7 +75,7 @@ def get_OEE_by_Zone_per_Week():
 
             for wc, zones in zone_data.items():
                 for zone, data in zones.items():
-                    if stationid in data["stations"]:
+                    if stationid in data["stations"] and stationDay == this_date.day and stationMonth == this_date.month and stationYear == this_date.year:
                         data["total_good"] += temp_total_good
                         data["total_expected"] += temp_total_expected
                         data["total_ideal_run_time"] += temp_ideal_run_time
@@ -83,7 +85,7 @@ def get_OEE_by_Zone_per_Week():
 
             for wc, zones in zone_data.items():
                 for zone, data in zones.items():
-                    if stationid in data["stations"]:
+                    if stationid in data["stations"] and stationDay == this_date.day and stationMonth == this_date.month and stationYear == this_date.year:
                         m = data["daily"][count]
                         m["total_good"] += temp_total_good
                         m["total_expected"] += temp_total_expected

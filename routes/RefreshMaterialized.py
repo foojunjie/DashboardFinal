@@ -9,7 +9,7 @@ def refresh_worker():
         now = datetime.now()
         if now.hour != last_hour:
             run_command("REFRESH MATERIALIZED VIEW public.oee_data_station;")
-            run_command("REFRESH MATERIALIZED VIEW public.oee_data_station_month;")
+            run_command("REFRESH MATERIALIZED VIEW public.oee_data_station_in_details;")
             last_hour = now.hour
             print(f"Refreshed materialized view at {now}")
         else:

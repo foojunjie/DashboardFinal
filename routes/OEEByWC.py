@@ -66,7 +66,7 @@ def get_OEE_by_WorkCell():
                 data["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
                 data["total_total_downtime_seconds"] += temp_total_downtime_seconds
 
-    with open("queries/OEEbyStationPerMonth.sql", "r") as f:
+    with open("queries/OEEbyStationPerDetails.sql", "r") as f:
         sql_month = f.read()
 
     oee_per_month = run_query(sql_month, ())

@@ -7,7 +7,7 @@ OEE_by_Station = Blueprint("OEE_by_Station", __name__)
 @OEE_by_Station.route("/api/OEE_by_Station", methods=["GET"])
 def get_OEE_by_Station():
     today = date.today()
-    this_year = 2025#today.year
+    this_year = today.year
 
     # Group data by workcell
     station_data = {}
@@ -81,7 +81,7 @@ def get_OEE_by_Station():
                     data["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
                     data["total_total_downtime_seconds"] += temp_total_downtime_seconds
 
-    with open("queries/OEEbyStationPerMonth.sql", "r") as f:
+    with open("queries/OEEbyStationPerDetails.sql", "r") as f:
         sql_month = f.read()
 
     oee_per_month = run_query(sql_month, ())
@@ -105,7 +105,7 @@ def get_OEE_by_Station():
             if month == stationMonth and stationMonth != 0 and stationYear == this_year:
                 for wc, zones in station_data.items():
                     for zone, stations in zones.items():
-                        if stationID in stations:   # only update the matching station
+                        if stationID in stations and stationMonth == month and stationYear == this_year:   
                             data = stations[stationID]
                             m = data["monthly"][month]
                             m["total_good"] += temp_total_good

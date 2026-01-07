@@ -1,1 +1,0 @@
-select * from oee_data_station_month

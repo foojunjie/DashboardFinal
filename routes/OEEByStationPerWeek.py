@@ -51,16 +51,18 @@ def get_OEE_by_Station_per_Week():
                 } for i in range(1, 8)}
             }
 
-    with open("queries/OEEbyStationPerDay.sql", "r") as f:
+    with open("queries/OEEbyStationPerDetails.sql", "r") as f:
         sql = f.read()
 
-    for count in range(1,8):
-        Oee = run_query(sql, (this_date, this_date, this_date, this_date, this_date, this_date, this_date,
-                            this_date, this_date, this_date, this_date, this_date, this_date, this_date))
-        
+    Oee = run_query(sql, ())
+
+    for count in range(1,8):        
         for r in Oee:
             stationID = r["id"]
             stationName = r["name"]
+            stationDay = r["day"] or 0
+            stationMonth = r["month"] or 0
+            stationYear = r["year"] or 0
             temp_total_good = r["totalgood"] or 0
             temp_total_expected = r["totalexpected"] or 0
             temp_ideal_run_time = r["idealruntime"] or 0
@@ -74,7 +76,7 @@ def get_OEE_by_Station_per_Week():
 
             for wc, zones in station_data.items():
                 for zone, stations in zones.items():
-                    if stationID in stations:   # only update the matching station
+                    if stationID in stations and stationDay == this_date.day and stationMonth == this_date.month and stationYear == this_date.year:   
                         data = stations[stationID]
                         data["name"] = stationName
                         data["total_good"] += temp_total_good
@@ -86,7 +88,7 @@ def get_OEE_by_Station_per_Week():
 
             for wc, zones in station_data.items():
                 for zone, stations in zones.items():
-                    if stationID in stations:
+                    if stationID in stations and stationDay == this_date.day and stationMonth == this_date.month and stationYear == this_date.year:
                         m = data["daily"][count]
                         m["total_good"] += temp_total_good
                         m["total_expected"] += temp_total_expected
@@ -106,8 +108,8 @@ def get_OEE_by_Station_per_Week():
                 quality = min(max(round((float(data["total_good"])*100 / float(data["total_expected"])), 2), 0), 100) \
                 if data["total_expected"] > 0 else 0
 
-                performance = min(max(round((float(data["total_ideal_run_time"])*100 / float(data["total_actual_run_time"])), 2, 0), 100)) \
-                            if data["total_actual_run_time"] > 0 else 0
+                performance = min(max(round((float(data["total_ideal_run_time"])*100 / float(data["total_actual_run_time"])), 2), 0), 100) \
+                        if data["total_actual_run_time"] > 0 else 0
 
                 availability = min(max(round(((float(data["total_planned_production_time_seconds"]) - float(data["total_total_downtime_seconds"])) * 100 /
                                     float(data["total_planned_production_time_seconds"])), 2), 0), 100) \

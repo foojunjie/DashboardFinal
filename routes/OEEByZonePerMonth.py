@@ -57,13 +57,14 @@ def get_OEE_by_Zone_per_Month():
             zone_data[workcell][zone]["stations"].append(stationID)
 
     # ---- Load SQL ----
-    with open("queries/OEEbyStationPerMonth.sql", "r") as f:
+    with open("queries/OEEbyStationPerDetails.sql", "r") as f:
             sql_month = f.read()
 
     oee_per_month = run_query(sql_month, ())
 
     for r in oee_per_month:
         stationid = r["id"]
+        stationDay = r["day"]
         stationMonth = r["month"]
         stationYear = r["year"]
         temp_total_good = r["totalgood"] or 0
@@ -86,26 +87,8 @@ def get_OEE_by_Zone_per_Month():
                     data["total_actual_run_time"] += temp_actual_run_time
                     data["total_planned_production_time_seconds"] += temp_planned_production_time_seconds
                     data["total_total_downtime_seconds"] += temp_total_downtime_seconds
-
-    with open("queries/OEEbyStationPerDay.sql", "r") as f:
-                sql_day = f.read()
                 
-    for day in range(1, max_day):
-
-        this_date = date(this_year, this_month, day)
-
-        oee_per_day = run_query(sql_day, (this_date, this_date, this_date, this_date, this_date, this_date, this_date,
-                                            this_date, this_date, this_date, this_date, this_date, this_date, this_date))
-
-        for r in oee_per_day:
-            stationid = r["id"]
-            temp_total_good = r["totalgood"] or 0
-            temp_total_expected = r["totalexpected"] or 0
-            temp_ideal_run_time = r["idealruntime"] or 0
-            temp_actual_run_time = r["actualruntime"] or 0
-            temp_planned_production_time_seconds = r["planned_production_time_seconds"] or 0
-            temp_total_downtime_seconds = r["total_downtime_seconds"] or 0
-
+        for day in range(1, max_day):
             # Week of month
             if day <= 7:
                 week = 1
@@ -118,13 +101,9 @@ def get_OEE_by_Zone_per_Month():
             else:
                 week = 5
 
-            if temp_total_expected == 0 or temp_ideal_run_time == 0 or temp_actual_run_time == 0 \
-            or temp_planned_production_time_seconds == 0 or temp_total_downtime_seconds > temp_planned_production_time_seconds:
-                continue
-
             for wc, zones in zone_data.items():
                 for zone, data in zones.items():
-                    if stationid in data["stations"]:
+                    if stationid in data["stations"] and stationDay == day and stationMonth == this_month and stationYear == this_year:
                         m = data["weekly"][week]
                         m["total_good"] += temp_total_good
                         m["total_expected"] += temp_total_expected
