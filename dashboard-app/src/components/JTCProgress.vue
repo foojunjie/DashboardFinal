@@ -113,13 +113,22 @@ export default {
       }
     },
     async fetchData() {
+      this.$emit('api-loading', true)
       try {
         const res = await fetch('http://127.0.0.1:8000/api/JTCProgress');
+        if (!res.ok) throw new Error(`API error: ${res.status}`)
         const data = await res.json();
         this.progress = data.progress || [];
         this.progress_today = data.progress_today || {};
         this.$nextTick(() => this.updateCharts());
-      } catch (e) { console.error(e); }
+        this.$emit('api-connected', true)
+      } catch (e) { 
+        console.error(e); 
+        this.$emit('api-error', `Failed to load data: ${e.message}`)
+        this.$emit('api-connected', false)
+      } finally {
+        this.$emit('api-loading', false)
+      }
     },
 
     updateCharts() {
