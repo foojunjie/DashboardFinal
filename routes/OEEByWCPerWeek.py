@@ -23,11 +23,13 @@ def get_OEE_by_WorkCell_per_Week():
 
     for row in workcells:
         workcell = row["name"]
+        workcellID = row["workcellid"]
         stationID = row["stationid"]
 
         if workcell not in workcell_data:
             workcell_data[workcell] = {
                 "stations": [stationID],  # list of station IDs
+                "workcellID": workcellID,
                 "total_good": 0,
                 "total_expected": 0,
                 "total_ideal_run_time": 0,
@@ -118,6 +120,7 @@ def get_OEE_by_WorkCell_per_Week():
 
         final_OEE_per_Week.append({
             "workcell": wc,
+            "workcellID": data["workcellID"],
             "oee": oee,
             "quality": quality,
             "performance": performance,

@@ -23,6 +23,9 @@ from routes.RunningStatusZone import Running_Status_Zone
 from routes.RunningStatusStation import Running_Status_Station
 from routes.OutputVsDailyTarget import OutputVsDailyTarget
 from routes.COCompletion import COCompletion
+from routes.UptimeVSDownTime import UpTimeVSDownTime
+from routes.TrackOutputQuantity import Track_Output_Quantity
+from routes.JTCProgress import JTCProgress
 import routes.RefreshMaterialized as refreshMaterialized
 
 app = Flask(__name__)
@@ -52,6 +55,9 @@ app.register_blueprint(Running_Status_Zone)                         # Running St
 app.register_blueprint(Running_Status_Station)                      # Running Status Station
 app.register_blueprint(OutputVsDailyTarget)                         # Output vs Daily Target
 app.register_blueprint(COCompletion)                                # Customer Order Completion
+app.register_blueprint(UpTimeVSDownTime)                            # Uptime vs Downtime
+app.register_blueprint(Track_Output_Quantity)                       # Track Output Quantity
+app.register_blueprint(JTCProgress)                                 # JTC Progress
 
 @app.route("/")
 def home():

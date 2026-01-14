@@ -67,7 +67,7 @@ def get_COCompletion():
 
     finaltotalmiss = totalmiss1 + totalmiss2
     finaltotaltarget = totaltargetfrommaps + totaltargetfromjtc
-    finaldailyoutput = "{:.2f}".format(finaltotaltarget*100/(finaltotaltarget + finaltotalmiss))
+    finaldailyoutput = "{:.2f}".format((finaltotaltarget - finaltotalmiss)*100/(finaltotaltarget))
 
     dailyOutput = {"dailyOutput":finaldailyoutput}
     

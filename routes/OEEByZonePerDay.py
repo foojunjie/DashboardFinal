@@ -30,6 +30,7 @@ def get_OEE_by_Zone_per_Day():
 
     for row in workcells:
         workcell = row["name"]
+        workcellID = row["workcellid"]
         zone = row["zone"]
         stationID = row["stationid"]
 
@@ -39,6 +40,7 @@ def get_OEE_by_Zone_per_Day():
         if zone not in zone_data[workcell]:
             zone_data[workcell][zone] = {
                 "stations": [stationID],  # list of station IDs
+                "workcellID": workcellID,
                 "total_good": 0,
                 "total_expected": 0,
                 "total_ideal_run_time": 0,
@@ -132,6 +134,7 @@ def get_OEE_by_Zone_per_Day():
 
             final.append({
                 "workcell": wc,
+                "workcellID": data["workcellID"],
                 "zone": zone,
                 "oee": oee,
                 "quality": quality,

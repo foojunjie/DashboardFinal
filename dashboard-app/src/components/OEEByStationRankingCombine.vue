@@ -1,7 +1,28 @@
 <template>
   <div class="dashboard-container">
-    <div class="header">OEE by Station (Ranking)</div>
-    <div class="chart-scroll-container">
+    <div class="header">OEE by Station (Ranking)</div>    
+    <!-- Tabs for period selection -->
+    <div class="footer">
+      <button 
+        v-for="tab in tabs" 
+        :key="tab" 
+        class="tab-btn"
+        :class="{ active: activePeriod === tab }"
+        @click="selectPeriod(tab)">
+        {{ tab }}
+      </button>
+    </div>
+
+    <!-- Date Picker for DAY tab -->
+    <div v-if="activePeriod === 'DAY'" class="date-picker-section">
+      <input 
+        type="date" 
+        v-model="selectedDate" 
+        class="date-input"
+        @change="fetchData"
+      />
+    </div>
+        <div class="chart-scroll-container">
       <div ref="BarChart1" class="chart"></div>
     </div>
   </div>
@@ -13,8 +34,13 @@ import { nextTick } from "vue";
 
 export default {
   data() {
+    const today = new Date()
+    const todayISO = today.toISOString().split('T')[0]
     return {
       refreshInterval: null,
+      tabs: ['TODAY', 'DAY', 'WEEKLY', 'MONTHLY', 'ALL TIME'],
+      activePeriod: 'TODAY',
+      selectedDate: todayISO,
       chartInstance: null
     };
   },
@@ -35,6 +61,11 @@ export default {
   },
 
   methods: {
+    selectPeriod(period) {
+      this.activePeriod = period
+      this.fetchData()
+    },
+
     resizeChart() {
       this.chartInstance?.resize();
     },
@@ -42,13 +73,32 @@ export default {
     async fetchData() {
       this.$emit("api-loading", true);
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/OEE_by_Station");
+        let endpoint = 'http://127.0.0.1:8000/api'
+        let params = {}
+        
+        if (this.activePeriod === 'TODAY') {
+          endpoint += '/OEE_by_Station_per_Day'
+        } else if (this.activePeriod === 'DAY') {
+          endpoint += '/OEE_by_Station_per_Day'
+          params.date = this.selectedDate
+        } else if (this.activePeriod === 'WEEKLY') {
+          endpoint += '/OEE_by_Station_per_Week'
+        } else if (this.activePeriod === 'MONTHLY') {
+          endpoint += '/OEE_by_Station_per_Month'
+        } else if (this.activePeriod === 'ALL TIME') {
+          endpoint += '/OEE_by_Station'
+        }
+
+        const queryString = new URLSearchParams(params).toString()
+        const fullUrl = queryString ? `${endpoint}?${queryString}` : endpoint
+        const res = await fetch(fullUrl);
         if (!res.ok) throw new Error("API error");
         const json = await res.json();
 
-        const data = json.Oee.filter(i => i.workcell);
+        const data = json.Oee || json.Oee_per_Day || json.Oee_per_Week || json.Oee_per_Month || []
+        const filtered = data.filter(i => i.workcell);
 
-        const sorted = data.sort((a, b) => {
+        const sorted = filtered.sort((a, b) => {
           if (b.oee !== a.oee) return b.oee - a.oee;
           if (b.availability !== a.availability) return b.availability - a.availability;
           if (b.performance !== a.performance) return b.performance - a.performance;
@@ -94,7 +144,7 @@ export default {
         xAxis: {
           type: "value",
           min: 0,
-          max: 300,
+          max: 400,
           axisLabel: { color: "#fff", formatter: "{value} %" }
         },
         yAxis: {
@@ -137,6 +187,72 @@ export default {
   color: #00baff;
   text-align: center;
   text-shadow: 0 0 8px rgba(0,186,255,0.3);
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-bottom: 2px solid #333;
+}
+
+.tab-btn {
+  background-color: #2e2e2e;
+  color: white;
+  border: 2px solid #666;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background-color: #3a3a3a;
+  border-color: #00baff;
+}
+
+.tab-btn.active {
+  background-color: #00baff;
+  border-color: #00baff;
+  color: white;
+  box-shadow: 0 0 12px #00baff88;
+}
+
+.date-picker-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #2e2e2e;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.date-input {
+  background-color: #1a1a1a;
+  border: 2px solid #00baff;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.date-input:hover {
+  border-color: #00d4ff;
+  box-shadow: 0 0 8px #00baff44;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #00d4ff;
+  box-shadow: 0 0 12px #00baff66;
 }
 
 /* Scrollable container */

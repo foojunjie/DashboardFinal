@@ -19,8 +19,10 @@ def get_OEE_by_Station():
 
     for row in workcells:
         workcell = row["name"]
+        workcellID = row["workcellid"]
         zone = row["zone"]
         stationID = row["stationid"]
+        sequence = row["sequence"]
 
         if workcell not in station_data:
             station_data[workcell] = {}
@@ -31,6 +33,8 @@ def get_OEE_by_Station():
         if stationID not in station_data[workcell][zone]:    
             station_data[workcell][zone][stationID] = {
                 "name":" ",
+                "workcellID": workcellID,
+                "sequence": sequence,
                 "total_good": 0,
                 "total_expected": 0,
                 "total_ideal_run_time": 0,
@@ -149,6 +153,8 @@ def get_OEE_by_Station():
 
                 final.append({
                     "workcell": wc,
+                    "workcellID": data["workcellID"],
+                    "sequence": data["sequence"],
                     "zone": zone,
                     "station": station,
                     "name":data["name"],

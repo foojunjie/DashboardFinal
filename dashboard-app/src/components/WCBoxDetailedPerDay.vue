@@ -4,6 +4,12 @@
       <div class="wc-title">{{ wc.title }}</div>
 
       <div class="header-right">
+        <!-- Top-right stats - missed and output boxes -->
+        <div class="top-right-stats" v-if="wc">
+          <div class="stat-row"><span class="stat-label">Missed:</span> <span class="stat-value">{{ wc.missed_quantity || 0 }}</span></div>
+          <div class="stat-row"><span class="stat-label">Output:</span> <span class="stat-value">{{ wc.output_done || 0 }}</span></div>
+        </div>
+
         <div class="status-column">
           <div class="wc-status" :class="statusClass">{{ wc.status }}</div>
           <div class="wc-connection" :class="connectionClass">{{ wc.connection || 'Connected' }}</div>
@@ -34,7 +40,7 @@
       </div>
     </div>
 
-    <!-- Bar Chart -->
+    <!-- Bar+Line Chart for Actual vs Ideal Duration -->
     <div ref="chartContainer" class="chart-container"></div>
   </div>
 </template>
@@ -43,7 +49,7 @@
 import * as echarts from 'echarts'
 
 export default {
-  name: 'WCBox',
+  name: 'WCBoxDetailedPerDay',
   props: {
     wc: { type: Object, required: true },
     period: { type: String, default: 'TODAY' }
@@ -51,14 +57,19 @@ export default {
   data() {
     return {
       chart: null,
-      localWC: { ...this.wc, hourlyOEE: [...(this.wc.hourlyData || Array(24).fill(0))] }
+      localWC: { ...this.wc }
     }
   },
   watch: {
     wc: {
       deep: true,
       handler(newVal) {
-        this.localWC = { ...newVal, hourlyOEE: [...(newVal.hourlyData || Array(24).fill(0))] }
+        this.localWC = { ...newVal }
+        this.updateChart()
+      }
+    },
+    period: {
+      handler() {
         this.updateChart()
       }
     }
@@ -81,7 +92,6 @@ export default {
   },
   mounted() {
     this.initChart()
-    this.updateHourlyData()
   },
   beforeUnmount() {
     if (this.chart) this.chart.dispose()
@@ -92,46 +102,44 @@ export default {
       this.chart = echarts.init(this.$refs.chartContainer)
       this.updateChart()
     },
-    updateHourlyData() {
-      const currentHour = new Date().getHours()
-      this.localWC.hourlyOEE[currentHour] = this.localWC.oee
-      this.updateChart()
-    },
     updateChart() {
       if (!this.chart) return
       
       // Generate X-axis labels based on period
       let xAxisLabels = []
-      let dataLength = 24
+      let actualDurationData = Array(24).fill(0)
+      let idealDurationData = Array(24).fill(0)
       
       if (this.period === 'TODAY' || this.period === 'DAY') {
         // 24 hours: 0, 1, 2, ..., 23
         xAxisLabels = Array.from({ length: 24 }, (_, i) => String(i))
-        dataLength = 24
+        actualDurationData = (this.wc.actual_duration && Array.isArray(this.wc.actual_duration)) 
+          ? this.wc.actual_duration.map(Number) 
+          : Array(24).fill(0)
+        idealDurationData = (this.wc.ideal_duration && Array.isArray(this.wc.ideal_duration)) 
+          ? this.wc.ideal_duration.map(Number) 
+          : Array(24).fill(0)
       } else if (this.period === 'WEEKLY') {
         // 7 days: 1, 2, 3, 4, 5, 6, 7
         xAxisLabels = Array.from({ length: 7 }, (_, i) => String(i + 1))
-        dataLength = 7
+        actualDurationData = Array(7).fill(0)
+        idealDurationData = Array(7).fill(0)
       } else if (this.period === 'MONTHLY') {
         // 5 weeks: 1, 2, 3, 4, 5
         xAxisLabels = Array.from({ length: 5 }, (_, i) => String(i + 1))
-        dataLength = 5
+        actualDurationData = Array(5).fill(0)
+        idealDurationData = Array(5).fill(0)
       } else if (this.period === 'ALL TIME') {
         // 12 months: 1, 2, ..., 12
         xAxisLabels = Array.from({ length: 12 }, (_, i) => String(i + 1))
-        dataLength = 12
+        actualDurationData = Array(12).fill(0)
+        idealDurationData = Array(12).fill(0)
       }
-      
-      const data = this.wc.hourlyData && Array.isArray(this.wc.hourlyData) 
-        ? this.wc.hourlyData 
-        : Array(dataLength).fill(0)
 
       const option = {
         grid: { left: '8%', right: '5%', top: '10%', bottom: '15%', containLabel: true },
         legend: {
-          data: this.period === 'TODAY' || this.period === 'DAY' 
-            ? ['OEE', 'Actual Duration', 'Ideal Duration']
-            : ['OEE'],
+          data: ['Actual Duration', 'Ideal Duration'],
           textStyle: { color: '#fff' },
           bottom: 0
         },
@@ -141,33 +149,20 @@ export default {
           axisLabel: { fontSize: 10, color: '#999', interval: 0 },
           axisLine: { lineStyle: { color: '#444' } }
         },
-        yAxis: [
-          {
-            type: 'value',
-            name: 'OEE (%)',
-            axisLabel: { fontSize: 10, color: '#999' },
-            splitLine: { lineStyle: { color: '#333' } },
-            axisLine: { lineStyle: { color: '#444' } }
-          },
-          {
-            type: 'value',
-            name: 'Duration (seconds)',
-            position: 'right',
-            axisLabel: { fontSize: 10, color: '#999' },
-            splitLine: { show: false }
-          }
-        ],
+        yAxis: {
+          type: 'value',
+          name: 'Duration (seconds)',
+          axisLabel: { fontSize: 10, color: '#999' },
+          splitLine: { lineStyle: { color: '#333' } },
+          axisLine: { lineStyle: { color: '#444' } }
+        },
         tooltip: {
           trigger: 'axis',
           formatter: params => {
             let html = `${params[0].axisValue}<br/>`
             params.forEach(p => {
               const value = typeof p.data === 'object' ? p.data.value : p.data
-              if (p.seriesName === 'OEE') {
-                html += `${p.seriesName}: ${value.toFixed(1)}%<br/>`
-              } else {
-                html += `${p.seriesName}: ${Math.round(value)}<br/>`
-              }
+              html += `${p.seriesName}: ${Math.round(value)}<br/>`
             })
             return html
           },
@@ -177,45 +172,52 @@ export default {
         },
         series: [
           {
-            name: 'OEE',
-            type: 'bar',
-            barWidth: '80%',
-            yAxisIndex: 0,
-            data: data.map(value => ({
-              value: Number(value) || 0,
-              itemStyle: {
-                color: value >= 80 ? '#4caf50' : value >= 50 ? '#ffeb3b' : '#f44336'
-              }
-            }))
-          }
-        ]
-      }
-
-      // Add duration lines only for TODAY/DAY period
-      if ((this.period === 'TODAY' || this.period === 'DAY') && this.wc.actual_duration && this.wc.ideal_duration) {
-        const actualDurationData = Array.isArray(this.wc.actual_duration) ? this.wc.actual_duration : Array(dataLength).fill(0)
-        const idealDurationData = Array.isArray(this.wc.ideal_duration) ? this.wc.ideal_duration : Array(dataLength).fill(0)
-        
-        option.series.push(
-          {
             name: 'Actual Duration',
             type: 'line',
-            yAxisIndex: 1,
-            data: actualDurationData.map(v => Number(v) || 0),
-            lineStyle: { color: '#FFC107', width: 2 },
-            itemStyle: { color: '#FFC107' },
-            smooth: true
+            data: actualDurationData.map((value, index) => {
+              const actualVal = Number(value) || 0
+              const idealVal = Number(idealDurationData[index]) || 0
+              // Red if actual > ideal, else green
+              const color = actualVal > idealVal ? '#FF4444' : '#44FF44'
+              return {
+                value: actualVal,
+                itemStyle: { color: color }
+              }
+            }),
+            lineStyle: { 
+              color: (ctx) => {
+                // Determine line color based on data point values
+                const data = ctx.data
+                if (Array.isArray(data) && data.length > 0) {
+                  let hasRedPoints = false
+                  for (let i = 0; i < Math.min(data.length, idealDurationData.length); i++) {
+                    const actual = typeof data[i] === 'object' ? data[i].value : data[i]
+                    const ideal = idealDurationData[i] || 0
+                    if (actual > ideal) {
+                      hasRedPoints = true
+                      break
+                    }
+                  }
+                  return hasRedPoints ? '#FF4444' : '#44FF44'
+                }
+                return '#44FF44'
+              },
+              width: 2 
+            },
+            itemStyle: { borderWidth: 2 },
+            smooth: true,
+            yAxisIndex: 0
           },
           {
             name: 'Ideal Duration',
             type: 'line',
-            yAxisIndex: 1,
             data: idealDurationData.map(v => Number(v) || 0),
-            lineStyle: { color: '#00baff', width: 2 },
+            lineStyle: { color: '#00baff', width: 2, type: 'dashed' },
             itemStyle: { color: '#00baff' },
-            smooth: true
+            smooth: true,
+            yAxisIndex: 0
           }
-        )
+        ]
       }
 
       this.chart.setOption(option)
@@ -251,7 +253,7 @@ export default {
 }
 
 .wc-box.bar-red {
-  border-left: 5px solid #ff6b6b;
+  border-left: 5px solid #f44336;
 }
 
 .wc-box.bar-gray {
@@ -264,30 +266,59 @@ export default {
   align-items: flex-start;
 }
 
+.wc-title {
+  font-weight: bold;
+  font-size: 16px;
+  color: #fff;
+}
+
 .header-right {
   display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.top-right-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  background-color: rgba(0, 186, 255, 0.1);
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #00baff;
+}
+
+.stat-row {
+  display: flex;
+  gap: 4px;
   align-items: center;
-  gap: 8px;
+}
+
+.stat-label {
+  color: #00baff;
+  font-weight: 600;
+}
+
+.stat-value {
+  color: #fff;
+  font-weight: bold;
 }
 
 .status-column {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  align-items: flex-end;
-}
-
-.wc-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: #00baff;
+  text-align: right;
 }
 
 .wc-status {
   font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 4px;
   font-weight: bold;
+  padding: 3px 6px;
+  border-radius: 3px;
+  background-color: #333;
+  color: #fff;
 }
 
 .wc-status.running {
@@ -295,37 +326,34 @@ export default {
   color: white;
 }
 
-.wc-status.partially {
-  background-color: #ff9800;
+.wc-status.idle {
+  background-color: #f44336;
   color: white;
 }
 
-.wc-status.idle {
-  background-color: #ff6b6b;
-  color: white;
+.wc-status.partially {
+  background-color: #ffeb3b;
+  color: #333;
 }
 
 .wc-connection {
-  font-size: 10px;
-  padding: 3px 6px;
-  border-radius: 3px;
-  font-weight: bold;
-  text-transform: uppercase;
+  font-size: 9px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  background-color: #333;
+  color: #999;
 }
 
 .wc-connection.connected {
-  background-color: #4caf50;
-  color: white;
+  color: #4caf50;
 }
 
 .wc-connection.manual {
-  background-color: #ff9800;
-  color: white;
+  color: #ffeb3b;
 }
 
 .wc-connection.not-connected {
-  background-color: #f44336;
-  color: white;
+  color: #f44336;
 }
 
 .wc-oee {
@@ -340,62 +368,43 @@ export default {
 }
 
 .oee-value {
-  color: #4caf50;
+  color: #00baff;
 }
 
-/* Metrics Box with White Border */
 .metrics-box {
-  border: 2px solid white;
-  border-radius: 6px;
-  padding: 10px;
-  background-color: #1a1a1a;
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #333;
 }
 
 .metric-row {
   display: flex;
-  gap: 8px;
   justify-content: space-around;
+  gap: 8px;
 }
 
 .metric {
+  flex: 1;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  flex: 1;
+  gap: 2px;
 }
 
 .metric-label {
   font-size: 11px;
   color: #999;
-  text-transform: uppercase;
-  font-weight: bold;
 }
 
 .metric-value {
   font-size: 14px;
   font-weight: bold;
-  color: #4caf50;
+  color: #00baff;
 }
 
-/* Bar Chart */
 .chart-container {
   width: 100%;
   height: 200px;
-  margin-top: 10px;
 }
-
-.top-right-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  background: rgba(0,0,0,0.25);
-  border: 1px solid #333;
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-.top-right-stats .stat-row { color: #fff; margin: 2px 0 }
-.top-right-stats .stat-label { color: #999; margin-right: 6px }
-.top-right-stats .stat-value { font-weight: bold; color: #00baff }
 </style>

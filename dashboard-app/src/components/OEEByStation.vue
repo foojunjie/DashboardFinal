@@ -83,215 +83,20 @@ export default {
         const todayISO = today.toISOString().split('T')[0]
         return {
             boxStartIndex: 0,
-            tabs: ['FAKE', 'TODAY', 'DAY', 'WEEKLY', 'MONTHLY', 'ALL TIME'],
+            tabs: ['TODAY', 'DAY', 'WEEKLY', 'MONTHLY', 'ALL TIME'],
             tabWCs:[],
-            activePeriod: 'FAKE',
+            activePeriod: 'ALL TIME',
             selectedDate: todayISO,
             refreshInterval: null,
             WC: null,
-            fakeWcList: [
-            {
-                id: 1,
-                title: 'Zone 1',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 95.5,
-                availability: 92,
-                performance: 96,
-                quality: 98,
-                bars: 'green',
-                hourlyData: [45, 52, 48, 55, 60, 65, 70, 75, 80, 85, 88, 90, 92, 90, 88, 85, 82, 78, 75, 70, 65, 60, 55, 50]
-            },
-            {
-                id: 2,
-                title: 'Zone 2',
-                status: 'Running',
-                connection: 'Manual',
-                oee: 89.3,
-                availability: 85,
-                performance: 91,
-                quality: 92,
-                bars: 'green',
-                hourlyData: [40, 45, 42, 48, 52, 58, 62, 68, 72, 78, 82, 85, 88, 86, 84, 80, 76, 72, 68, 64, 58, 52, 48, 42]
-            },
-            {
-                id: 3,
-                title: 'Zone 3',
-                status: 'Not Running',
-                connection: 'Not Connected',
-                oee: 0,
-                availability: 0,
-                performance: 0,
-                quality: 0,
-                bars: 'red',
-                hourlyData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            },
-            {
-                id: 4,
-                title: 'Zone 4',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 92.7,
-                availability: 90,
-                performance: 94,
-                quality: 96,
-                bars: 'green',
-                hourlyData: [50, 55, 52, 58, 62, 68, 72, 78, 82, 88, 90, 93, 95, 93, 91, 88, 85, 82, 78, 75, 70, 65, 60, 55]
-            },
-            {
-                id: 5,
-                title: 'Zone 1',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 88.2,
-                availability: 86,
-                performance: 89,
-                quality: 90,
-                bars: 'green',
-                hourlyData: [35, 40, 38, 42, 48, 52, 58, 62, 68, 72, 76, 80, 82, 80, 78, 75, 72, 68, 65, 60, 55, 50, 45, 40]
-            },
-            {
-                id: 6,
-                title: 'Zone 2',
-                status: 'Not Running',
-                connection: 'Manual',
-                oee: 45.5,
-                availability: 40,
-                performance: 50,
-                quality: 48,
-                bars: 'yellow',
-                hourlyData: [15, 18, 20, 22, 25, 28, 30, 32, 35, 38, 35, 32, 30, 28, 25, 22, 20, 18, 15, 12, 10, 8, 5, 0]
-            },
-            {
-                id: 7,
-                title: 'Zone 7',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 91.8,
-                availability: 89,
-                performance: 93,
-                quality: 94,
-                bars: 'green',
-                hourlyData: [42, 48, 45, 52, 58, 64, 70, 75, 80, 85, 88, 91, 93, 91, 89, 86, 83, 80, 76, 72, 68, 62, 56, 50]
-            },
-            {
-                id: 8,
-                title: 'Leak Test',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 85.4,
-                availability: 82,
-                performance: 87,
-                quality: 88,
-                bars: 'green',
-                hourlyData: [30, 35, 32, 38, 42, 48, 52, 58, 62, 68, 72, 75, 78, 76, 74, 71, 68, 65, 60, 55, 50, 45, 40, 35]
-            }
-            ],
-            wcList: [
-            {
-                id: 1,
-                title: 'Zone 1',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 95.5,
-                availability: 92,
-                performance: 96,
-                quality: 98,
-                bars: 'green',
-                hourlyData: [45, 52, 48, 55, 60, 65, 70, 75, 80, 85, 88, 90, 92, 90, 88, 85, 82, 78, 75, 70, 65, 60, 55, 50]
-            },
-            {
-                id: 2,
-                title: 'Zone 2',
-                status: 'Running',
-                connection: 'Manual',
-                oee: 89.3,
-                availability: 85,
-                performance: 91,
-                quality: 92,
-                bars: 'green',
-                hourlyData: [40, 45, 42, 48, 52, 58, 62, 68, 72, 78, 82, 85, 88, 86, 84, 80, 76, 72, 68, 64, 58, 52, 48, 42]
-            },
-            {
-                id: 3,
-                title: 'Zone 3',
-                status: 'Not Running',
-                connection: 'Not Connected',
-                oee: 0,
-                availability: 0,
-                performance: 0,
-                quality: 0,
-                bars: 'red',
-                hourlyData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            },
-            {
-                id: 4,
-                title: 'Zone 4',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 92.7,
-                availability: 90,
-                performance: 94,
-                quality: 96,
-                bars: 'green',
-                hourlyData: [50, 55, 52, 58, 62, 68, 72, 78, 82, 88, 90, 93, 95, 93, 91, 88, 85, 82, 78, 75, 70, 65, 60, 55]
-            },
-            {
-                id: 5,
-                title: 'Zone 1',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 88.2,
-                availability: 86,
-                performance: 89,
-                quality: 90,
-                bars: 'green',
-                hourlyData: [35, 40, 38, 42, 48, 52, 58, 62, 68, 72, 76, 80, 82, 80, 78, 75, 72, 68, 65, 60, 55, 50, 45, 40]
-            },
-            {
-                id: 6,
-                title: 'Zone 2',
-                status: 'Not Running',
-                connection: 'Manual',
-                oee: 45.5,
-                availability: 40,
-                performance: 50,
-                quality: 48,
-                bars: 'yellow',
-                hourlyData: [15, 18, 20, 22, 25, 28, 30, 32, 35, 38, 35, 32, 30, 28, 25, 22, 20, 18, 15, 12, 10, 8, 5, 0]
-            },
-            {
-                id: 7,
-                title: 'Zone 7',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 91.8,
-                availability: 89,
-                performance: 93,
-                quality: 94,
-                bars: 'green',
-                hourlyData: [42, 48, 45, 52, 58, 64, 70, 75, 80, 85, 88, 91, 93, 91, 89, 86, 83, 80, 76, 72, 68, 62, 56, 50]
-            },
-            {
-                id: 8,
-                title: 'Leak Test',
-                status: 'Running',
-                connection: 'Connected',
-                oee: 85.4,
-                availability: 82,
-                performance: 87,
-                quality: 88,
-                bars: 'green',
-                hourlyData: [30, 35, 32, 38, 42, 48, 52, 58, 62, 68, 72, 75, 78, 76, 74, 71, 68, 65, 60, 55, 50, 45, 40, 35]
-            }
-            ]
+            wcList: []
         }
     },
-    mounted() {
-        // Initialize with fake data on mount
-        this.wcList = JSON.parse(JSON.stringify(this.fakeWcList))
-
-        this.LoadWC()
+    async mounted() {
+        // Load initial data on mount
+        await this.LoadWC()
+        // Fetch data for active period
+        this.fetchPeriodData(this.WC, this.activePeriod)
 
         // Start auto-refresh every 5 minutes
         this.refreshInterval = setInterval(() => {
@@ -336,6 +141,14 @@ export default {
         }
     },
     methods: {
+        sortWcList() {
+            // Sort by workcellID then zone then sequence
+            this.wcList.sort((a, b) => {
+              if (a.workcellID !== b.workcellID) return a.workcellID - b.workcellID
+              if (a.zone !== b.zone) return a.zone - b.zone
+              return a.sequence - b.sequence
+            })
+        },
         nextBoxes() {
             if (this.boxStartIndex + 8 >= this.filteredWcList.length) {
                 this.boxStartIndex = 0;
@@ -353,14 +166,11 @@ export default {
         selectPeriod(period) {
             this.activePeriod = period
             this.boxStartIndex = 0;
-            if (period === 'FAKE') {
-            this.wcList = JSON.parse(JSON.stringify(this.fakeWcList))
-            this.$emit('api-connected', false)
-            } else if (period === 'DAY') {
-            // Load today's data when DAY tab is selected
-            this.fetchDayData()
+            if (period === 'DAY') {
+                // Load today's data when DAY tab is selected
+                this.fetchDayData()
             } else {
-            this.fetchPeriodData(this.WC,period)
+                this.fetchPeriodData(this.WC, period)
             }
         },
         scrollWCs(direction) {
@@ -398,9 +208,7 @@ export default {
         selectWC(WC) {
             this.WC = WC;
             this.boxStartIndex = 0;
-            if (this.activePeriod !== 'FAKE') {
-                this.fetchPeriodData(this.WC, this.activePeriod);
-            }
+            this.fetchPeriodData(this.WC, this.activePeriod);
         },
         fetchDayData() {
             this.fetchPeriodData(this.WC,'DAY', this.selectedDate)
@@ -408,6 +216,7 @@ export default {
         async fetchPeriodData(WC,period, dateParam) {
             this.$emit('api-loading', true)
             this.$emit('api-error', '')
+            console.log('fetchPeriodData called with period:', period, 'dateParam:', dateParam)
             
             try {
             let endpoint = 'http://127.0.0.1:8000/api'
@@ -436,6 +245,7 @@ export default {
             }
 
             const data = await response.json()
+            console.log('API response for period', period, ':', data)
             
             // Normalize response and map API data to wcList format
             let apiData = []
@@ -487,8 +297,11 @@ export default {
 
                 return {
                     id: index + 1,
+                    workcellID: Number(item.workcellID) || Number(item.workcell_id) || 0,
+                    sequence: Number(item.sequence) || 0,
                     workcellName: item.workcell,
-                    zone: item.zone, 
+                    zone: Number(item.zone) || 0,
+                    station: item.station,
                     // Display title shows both Name and Zone
                     title: item.name,
                     status: item.status || 'Idle',
@@ -498,12 +311,12 @@ export default {
                     performance: Number(item.performance) || 0,
                     quality: Number(item.quality) || 0,
                     bars: (item.oee || item.OEE) > 80 ? 'green' : (item.oee || item.OEE) > 50 ? 'yellow' : 'red',
-                    hourlyData: chartData
+                    hourlyData: chartData,
+                    stationId: item.station || item.station_id || item.id
                 }
             })
 
-            // Sort highest OEE → lowest (top = highest)
-            this.wcList.sort((a, b) => b.oee - a.oee)
+            this.sortWcList()
 
             this.loadStatus()
             

@@ -1,17 +1,48 @@
 <template>
   <div class="dashboard-container">
     <div class="header">OEE by Workcell (Ranking)</div>
-    <div ref="BarChart1" class="chart"></div>
+    
+    <!-- Tabs for period selection -->
+    <div class="footer">
+      <button 
+        v-for="tab in tabs" 
+        :key="tab" 
+        class="tab-btn"
+        :class="{ active: activePeriod === tab }"
+        @click="selectPeriod(tab)">
+        {{ tab }}
+      </button>
+    </div>
+
+    <!-- Date Picker for DAY tab -->
+    <div v-if="activePeriod === 'DAY'" class="date-picker-section">
+      <input 
+        type="date" 
+        v-model="selectedDate" 
+        class="date-input"
+        @change="fetchData"
+      />
+    </div>
+    
+    <div class="chart-scroll-container">
+      <div ref="BarChart1" class="chart"></div>
+    </div>
   </div>
 </template>
 
 <script>
 import * as echarts from "echarts";
+import { nextTick } from "vue";
 
 export default {
   data() {
+    const today = new Date()
+    const todayISO = today.toISOString().split('T')[0]
     return {
       refreshInterval: null,
+      tabs: ['TODAY', 'DAY', 'WEEKLY', 'MONTHLY', 'ALL TIME'],
+      activePeriod: 'TODAY',
+      selectedDate: todayISO,
       chartInstance: null
     }
   },
@@ -32,6 +63,11 @@ export default {
   },
 
   methods: {
+    selectPeriod(period) {
+      this.activePeriod = period
+      this.fetchData()
+    },
+
     resizeChart() {
       this.chartInstance?.resize()
     },
@@ -39,13 +75,31 @@ export default {
     async fetchData() {
         this.$emit('api-loading', true)
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/OEE_by_WorkCell")
+            let endpoint = 'http://127.0.0.1:8000/api'
+            let params = {}
+            
+            if (this.activePeriod === 'TODAY') {
+              endpoint += '/OEE_by_WorkCell_per_Day'
+            } else if (this.activePeriod === 'DAY') {
+              endpoint += '/OEE_by_WorkCell_per_Day'
+              params.date = this.selectedDate
+            } else if (this.activePeriod === 'WEEKLY') {
+              endpoint += '/OEE_by_WorkCell_per_Week'
+            } else if (this.activePeriod === 'MONTHLY') {
+              endpoint += '/OEE_by_WorkCell_per_Month'
+            } else if (this.activePeriod === 'ALL TIME') {
+              endpoint += '/OEE_by_WorkCell'
+            }
+
+            const queryString = new URLSearchParams(params).toString()
+            const fullUrl = queryString ? `${endpoint}?${queryString}` : endpoint
+            const res = await fetch(fullUrl)
             if (!res.ok) throw new Error("API error")
             const json = await res.json()
 
-            const data = json.Oee.filter(i => i.workcell)
-
-            const sorted = data.sort((a, b) => {
+            const data = json.Oee || json.Oee_per_Day || json.Oee_per_Week || json.Oee_per_Month || []
+            
+            const sorted = data.filter(i => i.workcell).sort((a, b) => {
               // sort by OEE first
               if (b.oee !== a.oee) return b.oee - a.oee
               // if OEE same, then Availability
@@ -75,8 +129,14 @@ export default {
     },
 
     initBarChart(labels, oee, availability, performance, quality) {
-      if (this.chartInstance) this.chartInstance.dispose()
-      this.chartInstance = echarts.init(this.$refs.BarChart1)
+      if (!this.chartInstance) {
+        this.chartInstance = echarts.init(this.$refs.BarChart1);
+      }
+
+      // Set chart height dynamically based on number of labels
+      const barHeight = 50; // px per bar (adjustable)
+      const chartHeight = labels.length * barHeight;
+      this.$refs.BarChart1.style.height = `${chartHeight}px`;
 
       const option = {
         tooltip: { trigger: "axis" },
@@ -89,7 +149,7 @@ export default {
         grid: { left: 120, right: 40, top: 50, bottom: 30 },
         xAxis: {
             type: "value",
-            max: 300,
+            max: 400,
             axisLabel: { color: "#fff", formatter: "{value} %" }
         },
         yAxis: {
@@ -99,42 +159,17 @@ export default {
             inverse: true
         },
         series: [
-          {
-            name: "OEE",
-            type: "bar",
-            stack: "total",
-            data: oee,
-            itemStyle: { color: "#4CAF50" },
-            label: { show: true, position: "inside", formatter: "{c}%", color: "#fff"}
-          },
-          {
-            name: "Availability",
-            type: "bar",
-            stack: "total",
-            data: availability,
-            itemStyle: { color: "#1E88E5" },
-            label: { show: true, position: "inside", formatter: "{c}%", color: "#fff"}
-          },
-          {
-            name: "Performance",
-            type: "bar",
-            stack: "total",
-            data: performance,
-            itemStyle: { color: "#FFC107" },
-            label: { show: true, position: "inside", formatter: "{c}%", color: "#fff"}
-          },
-          {
-            name: "Quality",
-            type: "bar",
-            stack: "total",
-            data: quality,
-            itemStyle: { color: "#FF6B6B" },
-            label: { show: true, position: "inside", formatter: "{c}%", color: "#fff"}
-          }
+          { name: "OEE", type: "bar", stack: "total", data: oee, itemStyle: { color: "#4CAF50" }, label: { show: true, position: "inside", color: "#fff", formatter: "{c}%" } },
+          { name: "Availability", type: "bar", stack: "total", data: availability, itemStyle: { color: "#1E88E5" }, label: { show: true, position: "inside", color: "#fff", formatter: "{c}%" } },
+          { name: "Performance", type: "bar", stack: "total", data: performance, itemStyle: { color: "#FFC107" }, label: { show: true, position: "inside", color: "#fff", formatter: "{c}%" } },
+          { name: "Quality", type: "bar", stack: "total", data: quality, itemStyle: { color: "#FF6B6B" }, label: { show: true, position: "inside", color: "#fff", formatter: "{c}%" } }
         ]
-      }
+      };
 
-      this.chartInstance.setOption(option)
+      nextTick(() => {
+        this.chartInstance.resize();
+        this.chartInstance.setOption(option);
+      });
     }
   }
 }
@@ -148,7 +183,8 @@ export default {
   background: #1a1a1a;
   padding: 10px;
   color: white;
-  height: 90vh;
+  min-height: 100vh;
+  height: 100vh;
 }
 
 .header {
@@ -159,16 +195,88 @@ export default {
   text-shadow: 0 0 8px rgba(0,186,255,0.3);
 }
 
+.footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-bottom: 2px solid #333;
+}
+
+.tab-btn {
+  background-color: #2e2e2e;
+  color: white;
+  border: 2px solid #666;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background-color: #3a3a3a;
+  border-color: #00baff;
+}
+
+.tab-btn.active {
+  background-color: #00baff;
+  border-color: #00baff;
+  color: white;
+  box-shadow: 0 0 12px #00baff88;
+}
+
+.date-picker-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #2e2e2e;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.date-input {
+  background-color: #1a1a1a;
+  border: 2px solid #00baff;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.date-input:hover {
+  border-color: #00d4ff;
+  box-shadow: 0 0 8px #00baff44;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #00d4ff;
+  box-shadow: 0 0 12px #00baff66;
+}
+
 .barGraph-container-row {
   display: flex;
-  width: 100%;
-  height: 90%;
+  height: 100%;
   gap: 10px;
+}
+
+.chart-scroll-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .chart {
   flex: 1;
-  height: 90%;
+  height: 100%;
+  min-height: 80vh;
   min-width: 0;
   background: #2e2e2e;
   border-radius: 6px;

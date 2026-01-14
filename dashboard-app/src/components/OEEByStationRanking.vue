@@ -5,6 +5,28 @@
       OEE BY STATION (RANKING)
     </div>
 
+    <!-- Tabs for period selection -->
+    <div class="footer">
+      <button 
+        v-for="tab in tabs" 
+        :key="tab" 
+        class="tab-btn"
+        :class="{ active: activePeriod === tab }"
+        @click="selectPeriod(tab)">
+        {{ tab }}
+      </button>
+    </div>
+
+    <!-- Date Picker for DAY tab -->
+    <div v-if="activePeriod === 'DAY'" class="date-picker-section">
+      <input 
+        type="date" 
+        v-model="selectedDate" 
+        class="date-input"
+        @change="fetchData"
+      />
+    </div>
+
     <!-- 4 Horizontal Bar Charts in one row -->
     <div class="barGraph-container-row">
       <div ref="BarChart1" class="chart"></div>
@@ -20,13 +42,17 @@ import * as echarts from 'echarts'
 
 export default {
   data() {
+    const today = new Date()
+    const todayISO = today.toISOString().split('T')[0]
     return {
       refreshInterval: null,
+      tabs: ['TODAY', 'DAY', 'WEEKLY', 'MONTHLY', 'ALL TIME'],
+      activePeriod: 'TODAY',
+      selectedDate: todayISO,
       OEERanking: null,
       AvailabilityRanking: null,
       PerformanceRanking: null,
       QualityRanking: null,
-
     }
   },
 
@@ -51,6 +77,11 @@ export default {
   },
 
   methods: {
+    selectPeriod(period) {
+      this.activePeriod = period
+      this.fetchData()
+    },
+
     handleResize() {
       [this.$refs.BarChart1, this.$refs.BarChart2, this.$refs.BarChart3, this.$refs.BarChart4].forEach(ref => {
         ref && echarts.getInstanceByDom(ref)?.resize()
@@ -60,48 +91,65 @@ export default {
     async fetchData() {
       this.$emit('api-loading', true)
       try {
-      const response = await fetch('http://127.0.0.1:8000/api/OEE_by_Station')
-      if (!response.ok) throw new Error(`API error: ${response.status}`)
-      const json = await response.json();
-      const data = json.Oee
+        let endpoint = 'http://127.0.0.1:8000/api'
+        let params = {}
+        
+        if (this.activePeriod === 'TODAY') {
+          endpoint += '/OEE_by_Station_per_Day'
+        } else if (this.activePeriod === 'DAY') {
+          endpoint += '/OEE_by_Station_per_Day'
+          params.date = this.selectedDate
+        } else if (this.activePeriod === 'WEEKLY') {
+          endpoint += '/OEE_by_Station_per_Week'
+        } else if (this.activePeriod === 'MONTHLY') {
+          endpoint += '/OEE_by_Station_per_Month'
+        } else if (this.activePeriod === 'ALL TIME') {
+          endpoint += '/OEE_by_Station'
+        }
 
-      const valid = data.filter(i => i.workcell);
+        const queryString = new URLSearchParams(params).toString()
+        const fullUrl = queryString ? `${endpoint}?${queryString}` : endpoint
+        const response = await fetch(fullUrl)
+        if (!response.ok) throw new Error(`API error: ${response.status}`)
+        const json = await response.json();
+        const data = json.Oee || json.Oee_per_Day || json.Oee_per_Week || json.Oee_per_Month || []
+        const valid = data.filter(i => i.workcell);
 
-      const sortedOEE          = [...valid].sort((a,b)=> b.oee - a.oee);
-      const sortedAvailability = [...valid].sort((a,b)=> b.availability - a.availability);
-      const sortedPerformance  = [...valid].sort((a,b)=> b.performance - a.performance);
-      const sortedQuality      = [...valid].sort((a,b)=> b.quality - a.quality);
+        const sortedOEE          = [...valid].sort((a,b)=> b.oee - a.oee);
+        const sortedAvailability = [...valid].sort((a,b)=> b.availability - a.availability);
+        const sortedPerformance  = [...valid].sort((a,b)=> b.performance - a.performance);
+        const sortedQuality      = [...valid].sort((a,b)=> b.quality - a.quality);
 
-      const OEEData = {
-        name: sortedOEE.map(i => `${i.workcell} Zone ${i.zone} ${i.name}`),
-        value: sortedOEE.map(i => i.oee)
-      };
-      const AVData = {
-        name: sortedAvailability.map(i => `${i.workcell} Zone ${i.zone} ${i.name}`),
-        value: sortedAvailability.map(i => i.availability)
-      };
-      const PFData = {
-        name: sortedPerformance.map(i => `${i.workcell} Zone ${i.zone} ${i.name}`),
-        value: sortedPerformance.map(i => i.performance)
-      };
-      const QLData = {
-        name: sortedQuality.map(i => `${i.workcell} Zone ${i.zone} ${i.name}`),
-        value: sortedQuality.map(i => i.quality)
-      };
+        const OEEData = {
+          name: sortedOEE.map(i => `${i.workcell} Zone ${i.zone} ${i.name}`),
+          value: sortedOEE.map(i => i.oee)
+        };
+        const AVData = {
+          name: sortedAvailability.map(i => `${i.workcell} Zone ${i.zone} ${i.name}`),
+          value: sortedAvailability.map(i => i.availability)
+        };
+        const PFData = {
+          name: sortedPerformance.map(i => `${i.workcell} Zone ${i.zone} ${i.name}`),
+          value: sortedPerformance.map(i => i.performance)
+        };
+        const QLData = {
+          name: sortedQuality.map(i => `${i.workcell} Zone ${i.zone} ${i.name}`),
+          value: sortedQuality.map(i => i.quality)
+        };
 
-      this.OEERanking = OEEData;
-      this.AvailabilityRanking = AVData;
-      this.PerformanceRanking = PFData;
-      this.QualityRanking = QLData;
+        this.OEERanking = OEEData;
+        this.AvailabilityRanking = AVData;
+        this.PerformanceRanking = PFData;
+        this.QualityRanking = QLData;
 
-      this.initBarCharts();
-      this.$emit('api-connected', true)
+        this.initBarCharts();
+        this.$emit('api-connected', true)
       } catch (error) {
-      console.error('Error fetching data:', error)
-      this.$emit('api-error', `Failed to load data: ${error.message}`)
-      this.$emit('api-connected', false)
+        console.error('Error fetching data:', error)
+        this.$emit('api-error', `Failed to load data: ${error.message}`)
+        this.$emit('api-connected', false)
       } finally {
-      this.$emit('api-loading', false)
+        this.$emit('api-loading', false)
       }
     },
 
@@ -204,6 +252,72 @@ export default {
   color: #00baff;
   text-align: center;
   text-shadow: 0 0 8px rgba(0,186,255,0.3);
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-bottom: 2px solid #333;
+}
+
+.tab-btn {
+  background-color: #2e2e2e;
+  color: white;
+  border: 2px solid #666;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background-color: #3a3a3a;
+  border-color: #00baff;
+}
+
+.tab-btn.active {
+  background-color: #00baff;
+  border-color: #00baff;
+  color: white;
+  box-shadow: 0 0 12px #00baff88;
+}
+
+.date-picker-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  padding: 10px;
+  background-color: #2e2e2e;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.date-input {
+  background-color: #1a1a1a;
+  border: 2px solid #00baff;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.date-input:hover {
+  border-color: #00d4ff;
+  box-shadow: 0 0 8px #00baff44;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #00d4ff;
+  box-shadow: 0 0 12px #00baff66;
 }
 
 .barGraph-container-row {

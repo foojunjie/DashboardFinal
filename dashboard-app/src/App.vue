@@ -13,14 +13,18 @@
           <button @click="currentView = 'attendance'" :class="{ active: currentView === 'attendance' }">Attendance</button>
           <button @click="currentView = 'COCompletion'" :class="{ active: currentView === 'COCompletion' }">Customer Order Completion</button>
           <button @click="currentView = 'oee'" :class="{ active: currentView === 'oee' }">OEE by Work Cell</button>
-          <button @click="currentView = 'oeeranking'" :class="{ active: currentView === 'oeeranking' }">OEEByWorkCellRanking</button>
-          <button @click="currentView = 'oeerankingcombine'" :class="{ active: currentView === 'oeerankingcombine' }">OEEByWorkCellRankingCombine</button>
           <button @click="currentView = 'oeebyzone'" :class="{ active: currentView === 'oeebyzone' }">OEE by Zone</button>
-          <button @click="currentView = 'oeezoneranking'" :class="{ active: currentView === 'oeezoneranking' }">OEEByZoneRanking</button>
-          <button @click="currentView = 'oeezonerankingcombine'" :class="{ active: currentView === 'oeezonerankingcombine' }">OEEByZoneRankingCombine</button>
           <button @click="currentView = 'oeebystation'" :class="{ active: currentView === 'oeebystation' }">OEE by Station</button>
+          <button @click="currentView = 'oeestationdetailedperday'" :class="{ active: currentView === 'oeestationdetailedperday' }">OEEByStationDetailedPerDay</button>
+          <button @click="currentView = 'oeeranking'" :class="{ active: currentView === 'oeeranking' }">OEEByWorkCellRanking</button>
+          <button @click="currentView = 'oeezoneranking'" :class="{ active: currentView === 'oeezoneranking' }">OEEByZoneRanking</button>
           <button @click="currentView = 'oeestationranking'" :class="{ active: currentView === 'oeestationranking' }">OEEByStationRanking</button>
+          <button @click="currentView = 'oeerankingcombine'" :class="{ active: currentView === 'oeerankingcombine' }">OEEByWorkCellRankingCombine</button>
+          <button @click="currentView = 'oeezonerankingcombine'" :class="{ active: currentView === 'oeezonerankingcombine' }">OEEByZoneRankingCombine</button>
           <button @click="currentView = 'oeestationrankingcombine'" :class="{ active: currentView === 'oeestationrankingcombine' }">OEEByStationRankingCombine</button>
+          <button @click="currentView = 'uptimevsdowntime'" :class="{ active: currentView === 'uptimevsdowntime' }">Uptime vs Downtime</button>
+          <button @click="currentView = 'jtcprogress'" :class="{ active: currentView === 'jtcprogress' }">JTC Progress</button>
+          
         </div>
 
         <button class="scroll-btn" @click="scrollNav('right')">›</button>
@@ -76,6 +80,9 @@ import OEEByZoneRankingCombine from './components/OEEByZoneRankingCombine.vue'
 import OEEByStation from './components/OEEByStation.vue'
 import OEEByStationRanking from './components/OEEByStationRanking.vue'
 import OEEByStationRankingCombine from './components/OEEByStationRankingCombine.vue'
+import UptimeVSDownTime from './components/UptimeVSDownTime.vue'
+import OEEByStationDetailedPerDay from './components/OEEByStationDetailedPerDay.vue'
+import JTCProgress from './components/JTCProgress.vue'
 
 export default {
   name: 'App',
@@ -95,6 +102,9 @@ export default {
     OutputVsDailyTarget,
     Attendance,
     CustomerOrderCompletion,
+    UptimeVSDownTime,
+    OEEByStationDetailedPerDay,
+    JTCProgress
   },
   data() {
     return {
@@ -119,6 +129,9 @@ export default {
       : this.currentView == 'OutputVsDailyTarget' ? 'OutputVsDailyTarget'
       : this.currentView === 'attendance' ? 'attendance'
       : this.currentView === 'COCompletion' ? 'CustomerOrderCompletion'
+      : this.currentView === 'uptimevsdowntime' ? 'UptimeVSDownTime'
+      : this.currentView === 'oeestationdetailedperday' ? 'OEEByStationDetailedPerDay'
+      : this.currentView === 'jtcprogress' ? 'JTCProgress'
       : this.currentView === 'table' ? 'TableDashboard' : 'TableDashboard2';
     }
   },
