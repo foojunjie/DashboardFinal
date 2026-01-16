@@ -59,7 +59,7 @@ export default {
   data() {
     return {
       progress: [],       
-      progress_today: {}, 
+      progress_today: [], 
       charts: [],
       stationPage: 0,
       stationPerPage: 5
@@ -67,10 +67,10 @@ export default {
   },
   computed: {
     allStationNames() {
-      if (!this.progress_today) return [];
+      if (!this.progress_today || Object.keys(this.progress_today).length === 0) return [];
       const names = new Set();
-      Object.values(this.progress_today).forEach(group => {
-        Object.values(group).forEach(item => names.add(item.stationName));
+      Object.values(this.progress_today).forEach(item => {
+        if (item.stationName) names.add(item.stationName);
       });
       return Array.from(names);
     },
@@ -79,14 +79,23 @@ export default {
       return this.allStationNames.slice(start, start + this.stationPerPage);
     },
     tableRows() {
-      if (!this.progress_today) return [];
+      if (!this.progress_today || typeof this.progress_today !== 'object') {
+        return [];
+      }
+
       const rows = {};
-      Object.values(this.progress_today).forEach(group => {
-        Object.values(group).forEach(item => {
-          if (!rows[item.orderNumber]) rows[item.orderNumber] = { orderNumber: item.orderNumber };
-          rows[item.orderNumber][item.stationName] = item.quantity;
-        });
+      const items = Array.isArray(this.progress_today)
+        ? this.progress_today
+        : Object.values(this.progress_today);
+
+      items.forEach(item => {
+        const orderNo = item.jtc_orderNumber;
+        if (!rows[orderNo]) {
+          rows[orderNo] = { orderNumber: orderNo };
+        }
+        rows[orderNo][item.name] = item.quantity ?? '-';
       });
+
       return Object.values(rows);
     },
     maxPages() {
@@ -94,22 +103,35 @@ export default {
     }
   },
   watch: {
-    pagedStations() { this.updateCharts(); }
+    pagedStations: {
+      immediate: true,
+      async handler() {
+        await this.$nextTick();
+        this.initCharts();
+        this.updateCharts();
+      }
+    }
   },
   mounted() {
-    this.initCharts();
     this.fetchData();
+    this.initCharts();
     window.addEventListener('resize', () => this.charts.forEach(c => c?.resize()));
   },
   methods: {
     initCharts() {
+      this.charts.forEach(c => c?.dispose());
       this.charts = [];
-      for (let i = 0; i < 5; i++) {
-        const el = i === 0 ? this.$refs.chartRef0 : this.$refs['chartRef' + i][0];
-        if (el) {
-          const chart = echarts.init(el);
-          this.charts.push(chart);
-        }
+
+      for (let i = 0; i < this.stationPerPage; i++) {
+        const refName = i === 0 ? 'chartRef0' : 'chartRef' + i;
+        const ref = this.$refs[refName];
+
+        if (!ref) continue;
+
+        const el = Array.isArray(ref) ? ref[0] : ref;
+        if (!el) continue;
+
+        this.charts.push(echarts.init(el));
       }
     },
     async fetchData() {
@@ -133,6 +155,7 @@ export default {
 
     updateCharts() {
       // FORCE 4 CONSECUTIVE DATES (End at current time)
+      if (!this.charts.length) return;
       const last4Dates = [];
       for (let i = 3; i >= 0; i--) {
         const d = new Date();
@@ -141,20 +164,22 @@ export default {
       }
 
       this.charts.forEach((chart, index) => {
-        const name = this.pagedStations[index];
-
-        const stationData = this.progress.filter(p => p.name === name);
+        const stationName = this.pagedStations[index];
+        const stationData = this.progress.filter(p => p.name === stationName);
         const labels = [];
         const actuals = [];
         const targets = [];
 
         last4Dates.forEach(dateStr => {
-          const match = stationData.find(p => p.jtc_actualEndDate?.startsWith(dateStr));
+          const match = stationData.find(p => {
+             const formattedDate = new Date(p.jtc_actualEndDate).toISOString().split('T')[0];
+             return formattedDate === dateStr;
+          });
           const dateObj = new Date(dateStr);
           
           labels.push(dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
           actuals.push(match ? (match.quantity || 0) : 0);
-          targets.push(name ? (match ? match.jtc_quantityNeeded : 50) : 0);
+          targets.push(match ? (match.jtc_quantityNeeded || 0) : 0);
         });
 
         chart.setOption({
@@ -186,7 +211,13 @@ export default {
                 showBackground: true,
                 backgroundStyle: { color: 'rgba(180, 180, 180, 0.1)'}
             },
-            { name: 'Target', type: 'line', data: targets, itemStyle: { color: '#FFEB3B' }, symbolSize: 4, coonectNulls: true }
+            { 
+              name: 'Target', 
+              type: 'line', 
+              data: targets, 
+              itemStyle: { color: '#FFEB3B' }, 
+              symbolSize: 4,
+            }
           ]
         }, true);
       });
@@ -199,7 +230,12 @@ export default {
 
 <style scoped>
 .dashboard { 
-  background: #1a1a1a; 
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease; 
   color: white; 
   height: 100vh; 
   width: 100vw;
@@ -264,13 +300,19 @@ export default {
   border-radius: 4px; 
   overflow-y: auto; 
   max-height: 100%;
-  border: 1px solid #512f87;
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 
 .inventory-table { 
   width: 100%; 
   border-collapse: collapse; 
-  color: #333; 
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   font-size: 16px; /* Scaled down slightly to fit more rows */
 }
 
@@ -296,7 +338,12 @@ export default {
 
 /* Chart Styling */
 .linebar-box { 
-  background: #2e2e2e; 
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   padding: 10px; 
   border-radius: 4px; 
   display: flex; 
@@ -304,6 +351,11 @@ export default {
   height: 100%; 
   box-sizing: border-box;
   box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+.linebar-box:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 
 .linebar-title { 

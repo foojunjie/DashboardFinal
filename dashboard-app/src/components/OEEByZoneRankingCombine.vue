@@ -41,7 +41,7 @@ export default {
     return {
       refreshInterval: null,
       tabs: ['TODAY', 'DAY', 'WEEKLY', 'MONTHLY', 'ALL TIME'],
-      activePeriod: 'TODAY',
+      activePeriod: 'ALL TIME',
       selectedDate: todayISO,
       chartInstance: null
     }
@@ -181,7 +181,12 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  background: #1a1a1a;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   padding: 10px;
   color: white;
   height: 90vh;
@@ -275,10 +280,20 @@ export default {
 
 .chart {
   flex: 1;
-  height: 90%;
   min-width: 0;
-  background: #2e2e2e;
+  min-height: 400px;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   border-radius: 6px;
   padding: 5px;
+}
+
+.chart:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 </style>

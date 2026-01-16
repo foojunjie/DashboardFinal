@@ -469,7 +469,12 @@ export default {
 
 <style scoped>
 .dashboard {
-  background: #1a1a1a; /* darker grey-black */
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   color: white;
   display: flex;
   flex-direction: column;
@@ -508,22 +513,30 @@ export default {
 .meters-container {
   display: flex;
   flex: 1.5;
-  gap: 0;
+  gap: 8px;
+  min-height: 0;
+  height: 100%;
 }
 
 .meter-box {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #2e2e2e;
-  border: 15px solid #1a1a1a;
-  border-right-width: 2px;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
   height: 100%;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+  min-height: 0;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-.meter-box:last-child {
-  border-right-width: 15px;
+.meter-box:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 
 .meter-title {
@@ -538,9 +551,9 @@ export default {
 }
 
 .meter-content {
-  background-color: #2e2e2e;
+  background: rgba(3, 23, 57, 0.6);
   flex: 1;
-  padding: 8px;
+  padding: 4px;
 }
 
 .linebar-container {
@@ -549,15 +562,23 @@ export default {
 }
 
 .linebar-box {
-  background-color: #2e2e2e;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   padding: 8px;
-  border-radius: 10px;
-  border: 15px solid #1a1a1a;
   width: 100%;
   height: 100%;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+}
+
+.linebar-box:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 
 .chart {
@@ -593,13 +614,19 @@ export default {
   background-position: center;
   background-repeat: no-repeat;
   background-color: white;
-  border: 2px solid #512f87;
-  border-radius: 6px;
   overflow: auto;
   height: 100%;
   width: 100%;
-  border: 15px solid #1a1a1a;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.inventory-table-container:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 
 .inventory-table-container::before {

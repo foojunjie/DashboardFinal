@@ -240,10 +240,15 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  background: #1a1a1a;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   padding: 10px;
   color: white;
-  height: 80vh;
+  height: 100vh;
 }
 
 .header {
@@ -331,8 +336,19 @@ export default {
   flex: 1;
   height: 100%;
   min-width: 0;
-  background: #2e2e2e;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   border-radius: 6px;
   padding: 5px;
+  box-sizing: border-box;
+}
+
+.chart:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 </style>

@@ -387,7 +387,12 @@ export default {
 
 <style scoped>
 .dashboard-container {
-  background: #1a1a1a;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   color: white;
   padding: 20px;
   min-height: 100vh;

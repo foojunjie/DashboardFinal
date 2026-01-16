@@ -374,7 +374,12 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
 }
 
 .OutputVsDailyTarget-title {
@@ -422,13 +427,21 @@ export default {
 .bar-box {
   width: 100%;
   height: 100%;
-  background: rgba(30, 30, 40, 0.9);
-  border: 2px solid #00baff;
-  border-radius: 10px;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   padding: 20px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+}
+
+.bar-box:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 
 .chart {
@@ -446,13 +459,21 @@ export default {
 .table-box {
   width: 100%;
   height: 100%;
-  background: rgba(30, 30, 40, 0.9);
-  border: 2px solid #00baff;
-  border-radius: 10px;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   padding: 15px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+}
+
+.table-box:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 
 .table-title {
@@ -514,14 +535,22 @@ export default {
 }
 
 .details-box {
-  background: rgba(30, 30, 40, 0.9);
-  border: 2px solid #00baff;
-  border-radius: 10px;
+  background: rgba(3, 23, 57, 0.8);
+  border: 1px solid rgba(0, 186, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 186, 255, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
   padding: 15px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.details-box:hover {
+  border-color: #00baff;
+  box-shadow: 0 0 18px rgba(0, 186, 255, 0.4);
 }
 
 .station-content {

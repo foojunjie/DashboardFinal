@@ -6,7 +6,7 @@ OEE_by_Station_per_Day = Blueprint("OEE_by_Station_per_Day", __name__)
 
 @OEE_by_Station_per_Day.route("/api/OEE_by_Station_per_Day", methods=["GET"])
 def get_OEE_by_Station_per_Day():
-    today = date.today()
+    today = date(2026,1,16)#.today()
 
     # Check if a specific date was requested
     date_param = request.args.get('date')
